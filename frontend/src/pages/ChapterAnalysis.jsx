@@ -229,13 +229,14 @@ export default function ChapterAnalysis({
       return analytics.subjects.map((sub, i) => {
         const fallback =
           subjects.find(
-            (s) => s.name.toLowerCase() === sub.subjectName.toLowerCase()
-          ) || subjects[i % subjects.length];
+            (s) => s.name.toLowerCase() === sub.subjectName?.toLowerCase()
+          ) || subjects[i % subjects.length] || subjects[0];
 
         return {
           ...fallback,
-          name: sub.subjectName,
+          name: sub.subjectName || fallback.name,
           score: sub.accuracy || 0,
+          chapters: Array.isArray(fallback.chapters) ? fallback.chapters : (subjects[0].chapters || []),
         };
       });
     }
@@ -248,22 +249,32 @@ export default function ChapterAnalysis({
     displaySubjects[0] ||
     subjects[0];
 
+  const chaptersList = useMemo(() => {
+    if (Array.isArray(subject?.chapters) && subject.chapters.length > 0) {
+      return subject.chapters;
+    }
+    const matched = subjects.find(
+      (s) => s.name.toLowerCase() === subject?.name?.toLowerCase()
+    );
+    return matched?.chapters || subjects[0]?.chapters || [];
+  }, [subject]);
+
   const overall = useMemo(() => {
     if (analytics?.overview?.averageAccuracy) {
       return analytics.overview.averageAccuracy;
     }
 
     return Math.round(
-      displaySubjects.reduce((sum, item) => sum + item.score, 0) /
-        displaySubjects.length
+      displaySubjects.reduce((sum, item) => sum + (item.score || 0), 0) /
+        (displaySubjects.length || 1)
     );
   }, [analytics, displaySubjects]);
 
-  const weakChapters = subject.chapters.filter(
+  const weakChapters = chaptersList.filter(
     (chapter) => chapter.score < 60
   );
 
-  const strongChapters = subject.chapters.filter(
+  const strongChapters = chaptersList.filter(
     (chapter) => chapter.score >= 80
   );
 
@@ -448,7 +459,7 @@ export default function ChapterAnalysis({
             </div>
 
             <div style={styles.chapterList}>
-              {subject.chapters.map(
+              {chaptersList.map(
                 (chapter, index) => {
                   const status = getStatus(
                     chapter.score
@@ -461,7 +472,7 @@ export default function ChapterAnalysis({
                         ...styles.chapterRow,
                         borderBottom:
                           index ===
-                          subject.chapters.length - 1
+                          chaptersList.length - 1
                             ? "none"
                             : `1px solid ${C.border}`,
                       }}

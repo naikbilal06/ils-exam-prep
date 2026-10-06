@@ -1311,7 +1311,7 @@ export default function App() {
               }
               onBack={() =>
                 openDashboardSection(
-                  "chapter-analysis"
+                  "analysis"
                 )
               }
               onOpenSection={
@@ -1343,7 +1343,7 @@ export default function App() {
               }
               onBack={() =>
                 openDashboardSection(
-                  "question-analysis"
+                  "analysis"
                 )
               }
               onOpenSection={
@@ -1375,7 +1375,7 @@ export default function App() {
               }
               onBack={() =>
                 openDashboardSection(
-                  "weakness-insights"
+                  "analysis"
                 )
               }
               onOpenSection={
@@ -1407,7 +1407,7 @@ export default function App() {
               }
               onBack={() =>
                 openDashboardSection(
-                  "ai-suggestions"
+                  "analysis"
                 )
               }
               onOpenSection={
@@ -1439,7 +1439,7 @@ export default function App() {
               }
               onBack={() =>
                 openDashboardSection(
-                  "rank-improvement"
+                  "dashboard"
                 )
               }
               onOpenSection={
@@ -1471,7 +1471,7 @@ export default function App() {
               }
               onBack={() =>
                 openDashboardSection(
-                  "college-prediction"
+                  "dashboard"
                 )
               }
               onOpenSection={
