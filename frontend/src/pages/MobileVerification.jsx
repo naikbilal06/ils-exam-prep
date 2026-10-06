@@ -1,7 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  Capacitor,
+  CapacitorHttp,
+} from "@capacitor/core";
+
+import {
+  GoogleSignIn,
+} from "@capawesome/capacitor-google-sign-in";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3000";
+
+const GOOGLE_CLIENT_ID =
+  "363554744342-stl3n7rcatuol3hutjpv2ck2f7ei69oq.apps.googleusercontent.com";
 
 /* =========================================================
    ILS RANKER LOGO
@@ -9,59 +26,62 @@ const API_URL =
 
 function RankerLogo() {
   return (
-    <svg
-      width="74"
-      height="74"
-      viewBox="0 0 100 100"
-      fill="none"
-      aria-hidden="true"
+    <div
+      style={{
+        width: "68px",
+        height: "68px",
+        borderRadius: "22px",
+        background:
+          "linear-gradient(135deg, rgba(16, 231, 157, 0.18) 0%, rgba(0, 112, 80, 0.28) 100%)",
+        border: "1px solid rgba(16, 231, 157, 0.4)",
+        boxShadow:
+          "0 12px 32px rgba(16, 231, 157, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.25)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: "6px",
+      }}
     >
-      <path
-        d="M17 70V43C17 40.8 18.8 39 21 39H34V70H17Z"
-        fill="#007050"
-      />
+      <svg
+        width="42"
+        height="42"
+        viewBox="0 0 100 100"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M17 70V43C17 40.8 18.8 39 21 39H34V70H17Z"
+          fill="#10E79D"
+          opacity="0.85"
+        />
 
-      <path
-        d="M42 70V29C42 26.8 43.8 25 46 25H59V70H42Z"
-        fill="#007050"
-      />
+        <path
+          d="M42 70V29C42 26.8 43.8 25 46 25H59V70H42Z"
+          fill="#10E79D"
+        />
 
-      <path
-        d="M67 70V15C67 12.8 68.8 11 71 11H83C85.2 11 87 12.8 87 15V70H67Z"
-        fill="#007050"
-      />
+        <path
+          d="M67 70V15C67 12.8 68.8 11 71 11H83C85.2 11 87 12.8 87 15V70H67Z"
+          fill="#34D399"
+        />
 
-      <path
-        d="M17 57H34V70H17V57Z"
-        fill="#062F3C"
-      />
+        <path
+          d="M26 54L47 41L57 48L80 20"
+          stroke="#FFFFFF"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
 
-      <path
-        d="M42 48H59V70H42V48Z"
-        fill="#062F3C"
-      />
-
-      <path
-        d="M67 36H87V70H67V36Z"
-        fill="#062F3C"
-      />
-
-      <path
-        d="M26 54L47 41L57 48L80 20"
-        stroke="#007050"
-        strokeWidth="7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M70 20H81V31"
-        stroke="#007050"
-        strokeWidth="7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+        <path
+          d="M70 20H81V31"
+          stroke="#FFFFFF"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   );
 }
 
@@ -111,7 +131,7 @@ function AppleIcon() {
       width="19"
       height="19"
       viewBox="0 0 24 24"
-      fill="#111111"
+      fill="#FFFFFF"
       aria-hidden="true"
     >
       <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.09.81 1.2-.24 2.35-.93 3.63-.84 1.54.12 2.7.73 3.46 1.84-3.18 1.9-2.43 6.08.49 7.25-.58 1.52-1.33 3.04-2.67 3.91ZM12.03 7.25C11.88 4.99 13.71 3.13 15.82 3c.29 2.61-2.36 4.55-3.79 4.25Z" />
@@ -133,7 +153,8 @@ function Spinner() {
         border: "1.6px solid #C4DED4",
         borderTopColor: "#007050",
         display: "inline-block",
-        animation: "rankerSpin .7s linear infinite",
+        animation:
+          "rankerSpin .7s linear infinite",
         flexShrink: 0,
       }}
     />
@@ -151,21 +172,366 @@ export default function MobileVerification({
   onBack,
   onVerified,
 }) {
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] =
+    useState(false);
 
-  const otpRef = useRef(null);
-  const requestedMobileRef = useRef("");
-  const verifyingOtpRef = useRef(false);
+  const [otp, setOtp] =
+    useState("");
 
-  const cleanMobile = String(mobile || "")
-    .replace(/\D/g, "")
-    .slice(0, 10);
+  const [backendOtp, setBackendOtp] =
+    useState("");
 
-  const validMobile = cleanMobile.length === 10;
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [googleLoading, setGoogleLoading] =
+    useState(false);
+
+  const otpRef =
+    useRef(null);
+
+  const requestedMobileRef =
+    useRef("");
+
+  const verifyingOtpRef =
+    useRef(false);
+
+  const googleInitializedRef =
+    useRef(false);
+
+  const cleanMobile =
+    String(mobile || "")
+      .replace(/\D/g, "")
+      .slice(0, 10);
+
+  const validMobile =
+    cleanMobile.length === 10;
+
+  /* =========================================================
+     GOOGLE INITIALIZATION
+  ========================================================= */
+
+  const initializeGoogle =
+    async () => {
+      if (
+        googleInitializedRef.current
+      ) {
+        return;
+      }
+
+      const platform =
+        Capacitor.getPlatform();
+
+      if (platform === "web") {
+        await GoogleSignIn.initialize({
+          clientId:
+            GOOGLE_CLIENT_ID,
+          redirectUrl:
+            window.location.origin,
+        });
+      } else {
+        await GoogleSignIn.initialize({
+          clientId:
+            GOOGLE_CLIENT_ID,
+        });
+      }
+
+      googleInitializedRef.current =
+        true;
+    };
+
+  /* =========================================================
+     COMPLETE GOOGLE LOGIN
+  ========================================================= */
+
+  const completeGoogleLogin =
+    async (result) => {
+      if (!result?.idToken) {
+        throw new Error(
+          "Google ID token was not received."
+        );
+      }
+
+      const payload = {
+        idToken:
+          result.idToken,
+      };
+
+      let data;
+
+      /* =====================================================
+         WEB
+      ===================================================== */
+
+      if (
+        Capacitor.getPlatform() ===
+        "web"
+      ) {
+        const response =
+          await fetch(
+            `${API_URL}/api/auth/google`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify(
+                payload
+              ),
+            }
+          );
+
+        data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data?.success ||
+          !data?.user
+        ) {
+          throw new Error(
+            data?.message ||
+              "Unable to complete Google login."
+          );
+        }
+      }
+
+      /* =====================================================
+         ANDROID / NATIVE
+      ===================================================== */
+
+      else {
+        const response =
+          await CapacitorHttp.post({
+            url:
+              `${API_URL}/api/auth/google`,
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            data: payload,
+          });
+
+        console.log(
+          "Native Google backend response:",
+          response
+        );
+
+        if (
+          response.status < 200 ||
+          response.status >= 300
+        ) {
+          let backendMessage =
+            `Google login failed (${response.status}).`;
+
+          try {
+            const responseData =
+              typeof response.data ===
+              "string"
+                ? JSON.parse(
+                    response.data
+                  )
+                : response.data;
+
+            backendMessage =
+              responseData?.message ||
+              backendMessage;
+          } catch {
+            // Keep fallback message.
+          }
+
+          throw new Error(
+            backendMessage
+          );
+        }
+
+        data =
+          typeof response.data ===
+          "string"
+            ? JSON.parse(
+                response.data
+              )
+            : response.data;
+
+        if (
+          !data?.success ||
+          !data?.user
+        ) {
+          throw new Error(
+            data?.message ||
+              "Unable to complete Google login."
+          );
+        }
+      }
+
+      console.log(
+        "ILS Ranker Google user:",
+        data.user
+      );
+
+      /*
+       * Send authenticated user to App.jsx.
+       *
+       * Existing completed user:
+       *     -> Dashboard
+       *
+       * New/incomplete user:
+       *     -> Exam Selection
+       */
+
+      onVerified(data);
+    };
+
+  /* =========================================================
+     GOOGLE REDIRECT - WEB ONLY
+  ========================================================= */
+
+  useEffect(() => {
+    const handleGoogleRedirect =
+      async () => {
+        if (
+          Capacitor.getPlatform() !==
+          "web"
+        ) {
+          return;
+        }
+
+        const params =
+          new URLSearchParams(
+            window.location.search
+          );
+
+        const hasGoogleCallback =
+          params.has("code") ||
+          params.has("error");
+
+        if (
+          !hasGoogleCallback
+        ) {
+          return;
+        }
+
+        try {
+          await initializeGoogle();
+
+          const result =
+            await GoogleSignIn.handleRedirectCallback();
+
+          if (!result?.idToken) {
+            throw new Error(
+              "Google ID token was not received."
+            );
+          }
+
+          await completeGoogleLogin(
+            result
+          );
+        } catch (err) {
+          console.error(
+            "Google redirect error:",
+            err
+          );
+
+          setError(
+            err?.message ||
+              "Google Sign-In failed."
+          );
+        }
+      };
+
+    handleGoogleRedirect();
+  }, []);
+
+  /* =========================================================
+     INITIALIZE GOOGLE
+  ========================================================= */
+
+  useEffect(() => {
+    initializeGoogle().catch(
+      (err) => {
+        console.error(
+          "Google initialization error:",
+          err
+        );
+      }
+    );
+  }, []);
+
+  /* =========================================================
+     GOOGLE SIGN IN
+  ========================================================= */
+
+  const handleGoogleSignIn =
+    async () => {
+      if (googleLoading) {
+        return;
+      }
+
+      try {
+        setGoogleLoading(true);
+        setError("");
+        setMessage("");
+
+        await initializeGoogle();
+
+        const result =
+          await GoogleSignIn.signIn();
+
+        console.log(
+          "Google Sign-In result:",
+          result
+        );
+
+        await completeGoogleLogin(
+          result
+        );
+      } catch (err) {
+        console.error(
+          "Google Sign-In error:",
+          err
+        );
+
+        const code =
+          err?.code || "";
+
+        if (
+          code ===
+          "SIGN_IN_CANCELED"
+        ) {
+          setError(
+            "Google sign-in was cancelled."
+          );
+        } else if (
+          code ===
+          "NO_CREDENTIAL_AVAILABLE"
+        ) {
+          setError(
+            "No Google account is available on this device."
+          );
+        } else if (
+          code ===
+          "PROVIDER_CONFIGURATION_ERROR"
+        ) {
+          setError(
+            "Google Play Services is unavailable or needs an update."
+          );
+        } else {
+          setError(
+            err?.message ||
+              "Google Sign-In failed."
+          );
+        }
+      } finally {
+        setGoogleLoading(false);
+      }
+    };
 
   /* =========================================================
      AUTO REQUEST OTP AFTER 10 DIGITS
@@ -173,176 +539,236 @@ export default function MobileVerification({
 
   useEffect(() => {
     if (!validMobile) {
-      requestedMobileRef.current = "";
+      requestedMobileRef.current =
+        "";
       return;
     }
 
-    if (requestedMobileRef.current === cleanMobile) {
+    if (
+      requestedMobileRef.current ===
+      cleanMobile
+    ) {
       return;
     }
 
-    requestedMobileRef.current = cleanMobile;
+    requestedMobileRef.current =
+      cleanMobile;
 
-    requestOtpAutomatically(cleanMobile);
-  }, [cleanMobile, validMobile]);
+    requestOtpAutomatically(
+      cleanMobile
+    );
+  }, [
+    cleanMobile,
+    validMobile,
+  ]);
 
   /* =========================================================
      REQUEST OTP
   ========================================================= */
 
-  const requestOtpAutomatically = async (mobileNumber) => {
-    if (
-      loading ||
-      !mobileNumber ||
-      mobileNumber.length !== 10
-    ) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-      setMessage("");
-
-      const response = await fetch(
-        `${API_URL}/api/auth/otp/request`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            mobile: mobileNumber,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message || "Unable to send OTP."
-        );
+  const requestOtpAutomatically =
+    async (
+      mobileNumber
+    ) => {
+      if (
+        loading ||
+        !mobileNumber ||
+        mobileNumber.length !==
+          10
+      ) {
+        return;
       }
 
-      setOtpSent(true);
+      try {
+        setLoading(true);
+        setError("");
+        setMessage("");
 
-      setMessage(
-        "Verification code sent successfully."
-      );
+        const response =
+          await fetch(
+            `${API_URL}/api/auth/otp/request`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                mobile:
+                  mobileNumber,
+              }),
+            }
+          );
 
-      window.setTimeout(() => {
-        otpRef.current?.focus();
-      }, 150);
-    } catch (err) {
-      console.error("OTP request error:", err);
+        const data =
+          await response.json();
 
-      setError(
-        err.message || "Unable to send OTP."
-      );
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+              "Unable to send OTP."
+          );
+        }
 
-      requestedMobileRef.current = "";
-    } finally {
-      setLoading(false);
-    }
-  };
+        setOtpSent(true);
+
+        const receivedOtp = String(data?.devOtp || data?.otp || "");
+        if (receivedOtp) {
+          setBackendOtp(receivedOtp);
+        }
+
+        setMessage(
+          data?.message || "Verification code ready."
+        );
+
+        window.setTimeout(
+          () => {
+            otpRef.current?.focus();
+          },
+          150
+        );
+      } catch (err) {
+        console.error(
+          "OTP request error:",
+          err
+        );
+
+        setError(
+          err?.message ||
+            "Unable to send OTP."
+        );
+
+        requestedMobileRef.current =
+          "";
+      } finally {
+        setLoading(false);
+      }
+    };
 
   /* =========================================================
      AUTO VERIFY AFTER 6 DIGITS
   ========================================================= */
 
-  const verifyOtpAutomatically = async (value) => {
-    if (
-      value.length !== 6 ||
-      loading ||
-      verifyingOtpRef.current
-    ) {
-      return;
-    }
-
-    try {
-      verifyingOtpRef.current = true;
-
-      setLoading(true);
-      setError("");
-      setMessage("Verifying your code...");
-
-      const response = await fetch(
-        `${API_URL}/api/auth/otp/verify`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            mobile: cleanMobile,
-            otp: value,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message || "Invalid OTP."
-        );
+  const verifyOtpAutomatically =
+    async (
+      value
+    ) => {
+      if (
+        value.length !== 6 ||
+        loading ||
+        verifyingOtpRef.current
+      ) {
+        return;
       }
 
-      onVerified(data);
-    } catch (err) {
-      console.error(
-        "OTP verification error:",
-        err
-      );
+      try {
+        verifyingOtpRef.current =
+          true;
 
-      setMessage("");
-      setError(
-        err.message || "Invalid OTP."
-      );
-      setOtp("");
-    } finally {
-      setLoading(false);
-      verifyingOtpRef.current = false;
-    }
-  };
+        setLoading(true);
+        setError("");
+        setMessage(
+          "Verifying your code..."
+        );
+
+        const response =
+          await fetch(
+            `${API_URL}/api/auth/otp/verify`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                mobile:
+                  cleanMobile,
+                otp: value,
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+              "Invalid OTP."
+          );
+        }
+
+        onVerified(data);
+      } catch (err) {
+        console.error(
+          "OTP verification error:",
+          err
+        );
+
+        setMessage("");
+        setError(
+          err?.message ||
+            "Invalid OTP."
+        );
+
+        setOtp("");
+      } finally {
+        setLoading(false);
+        verifyingOtpRef.current =
+          false;
+      }
+    };
 
   /* =========================================================
      OTP CHANGE
   ========================================================= */
 
-  const handleOtpChange = (event) => {
-    const value = event.target.value
-      .replace(/\D/g, "")
-      .slice(0, 6);
+  const handleOtpChange =
+    (event) => {
+      const value =
+        event.target.value
+          .replace(/\D/g, "")
+          .slice(0, 6);
 
-    setOtp(value);
+      setOtp(value);
 
-    if (error) {
-      setError("");
-    }
+      if (error) {
+        setError("");
+      }
 
-    if (value.length === 6) {
-      verifyOtpAutomatically(value);
-    }
-  };
+      if (value.length === 6) {
+        verifyOtpAutomatically(
+          value
+        );
+      }
+    };
 
   /* =========================================================
      CHANGE NUMBER
   ========================================================= */
 
-  const handleChangeNumber = () => {
-    setOtp("");
-    setOtpSent(false);
-    setMessage("");
-    setError("");
-    setLoading(false);
+  const handleChangeNumber =
+    () => {
+      setOtp("");
+      setOtpSent(false);
+      setMessage("");
+      setError("");
+      setLoading(false);
 
-    requestedMobileRef.current = "";
-    verifyingOtpRef.current = false;
+      requestedMobileRef.current =
+        "";
 
-    setMobile("");
-  };
+      verifyingOtpRef.current =
+        false;
+
+      setMobile("");
+    };
 
   /* =========================================================
      MOBILE INPUT SCREEN
@@ -352,29 +778,55 @@ export default function MobileVerification({
     return (
       <div style={styles.page}>
         <div style={styles.screen}>
-          <div style={styles.topArea}>
+          <div
+            style={
+              styles.topArea
+            }
+          >
             <RankerLogo />
 
-            <div style={styles.welcome}>
+            <div
+              style={styles.welcome}
+            >
               Welcome to
             </div>
 
-            <div style={styles.brand}>
+            <div
+              style={styles.brand}
+            >
               ILS RANKER
             </div>
 
-            <div style={styles.subtitle}>
+            <div
+              style={styles.subtitle}
+            >
               Your Exam Journey, Smarter with AI
             </div>
           </div>
 
-          <div style={styles.mobileSection}>
-            <div style={styles.mobileBox}>
-              <span style={styles.country}>
+          <div
+            style={
+              styles.mobileSection
+            }
+          >
+            <div
+              style={
+                styles.mobileBox
+              }
+            >
+              <span
+                style={
+                  styles.country
+                }
+              >
                 +91
               </span>
 
-              <span style={styles.separator}>
+              <span
+                style={
+                  styles.separator
+                }
+              >
                 |
               </span>
 
@@ -388,52 +840,102 @@ export default function MobileVerification({
                 onChange={(e) =>
                   setMobile(
                     e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10)
+                      .replace(
+                        /\D/g,
+                        ""
+                      )
+                      .slice(
+                        0,
+                        10
+                      )
                   )
                 }
                 placeholder="Mobile Number"
                 aria-label="Mobile Number"
-                style={styles.mobileInput}
+                style={
+                  styles.mobileInput
+                }
               />
             </div>
 
-            <div style={styles.autoRequest}>
-              {loading && validMobile && (
-                <>
-                  <Spinner />
-                  <span>
-                    Sending verification code...
-                  </span>
-                </>
-              )}
+            <div
+              style={
+                styles.autoRequest
+              }
+            >
+              {loading &&
+                validMobile && (
+                  <>
+                    <Spinner />
+
+                    <span>
+                      Sending verification code...
+                    </span>
+                  </>
+                )}
             </div>
 
-            <div style={styles.orRow}>
-              <div style={styles.orLine} />
+            <div
+              style={styles.orRow}
+            >
+              <div
+                style={
+                  styles.orLine
+                }
+              />
 
-              <span style={styles.orText}>
-                or
+              <span
+                style={
+                  styles.orText
+                }
+              >
+                OR
               </span>
 
-              <div style={styles.orLine} />
+              <div
+                style={
+                  styles.orLine
+                }
+              />
             </div>
 
             <button
               type="button"
-              style={styles.socialButton}
+              onClick={
+                handleGoogleSignIn
+              }
+              disabled={
+                googleLoading
+              }
+              style={{
+                ...styles.socialButton,
+                opacity:
+                  googleLoading
+                    ? 0.7
+                    : 1,
+              }}
             >
-              <GoogleIcon />
+              {googleLoading ? (
+                <Spinner />
+              ) : (
+                <GoogleIcon />
+              )}
+
               <span>
-                Continue with Google
+                {googleLoading
+                  ? "Signing in..."
+                  : "Continue with Google"}
               </span>
             </button>
 
             <button
               type="button"
-              style={styles.socialButton}
+              style={
+                styles.socialButton
+              }
             >
               <AppleIcon />
+
               <span>
                 Continue with Apple
               </span>
@@ -441,28 +943,78 @@ export default function MobileVerification({
           </div>
 
           {error && (
-            <div style={styles.errorMessage}>
+            <div
+              style={
+                styles.errorMessage
+              }
+            >
               {error}
             </div>
           )}
 
-          <div style={styles.terms}>
+          {message && (
+            <div
+              style={
+                styles.successMessage
+              }
+            >
+              {message}
+            </div>
+          )}
+
+          <div
+            style={styles.terms}
+          >
             By continuing, you agree to our
             <br />
-            <span style={styles.termsGreen}>
+
+            <span
+              style={
+                styles.termsGreen
+              }
+            >
               Terms of Service
             </span>
+
             {" & "}
-            <span style={styles.termsGreen}>
+
+            <span
+              style={
+                styles.termsGreen
+              }
+            >
               Privacy Policy
             </span>
             .
           </div>
 
-          <div style={styles.bottomBrand}>
+          <div
+            style={
+              styles.bottomBrand
+            }
+          >
             ILS RANKER
           </div>
         </div>
+
+        <style>
+          {`
+            @keyframes rankerSpin {
+              to {
+                transform: rotate(360deg);
+              }
+            }
+
+            input::placeholder {
+              color: #9DAAA6;
+              opacity: 1;
+            }
+
+            button:active {
+              transform: scale(.99);
+            }
+          `}
+        </style>
       </div>
     );
   }
@@ -474,43 +1026,105 @@ export default function MobileVerification({
   return (
     <div style={styles.page}>
       <div style={styles.screen}>
-        <div style={styles.topArea}>
+        <div
+          style={styles.topArea}
+        >
           <RankerLogo />
 
-          <div style={styles.welcome}>
+          <div
+            style={styles.welcome}
+          >
             Welcome to
           </div>
 
-          <div style={styles.brand}>
+          <div
+            style={styles.brand}
+          >
             ILS RANKER
           </div>
 
-          <div style={styles.subtitle}>
+          <div
+            style={styles.subtitle}
+          >
             Your Exam Journey, Smarter with AI
           </div>
         </div>
 
-        <div style={styles.otpSection}>
-          <div style={styles.otpHeading}>
+        <div
+          style={
+            styles.otpSection
+          }
+        >
+          <div
+            style={
+              styles.otpHeading
+            }
+          >
             Enter verification code
           </div>
 
-          <div style={styles.otpDescription}>
+          <div
+            style={
+              styles.otpDescription
+            }
+          >
             We sent a 6-digit verification code to
           </div>
 
-          <div style={styles.phoneNumber}>
+          <div
+            style={
+              styles.phoneNumber
+            }
+          >
             +91 {cleanMobile}
           </div>
 
-          <div style={styles.otpRow}>
+          {backendOtp && (
+            <div
+              style={{
+                marginTop: "12px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "6px 12px",
+                borderRadius: "14px",
+                background: "rgba(16, 185, 129, 0.14)",
+                border: "1px solid rgba(52, 211, 153, 0.35)",
+              }}
+            >
+              <span style={{ fontSize: "11.5px", color: "rgba(226, 232, 240, 0.85)" }}>
+                Backend OTP: <strong style={{ color: "#10E79D", letterSpacing: "1px" }}>{backendOtp}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => handleOtpChange({ target: { value: backendOtp } })}
+                style={{
+                  border: 0,
+                  borderRadius: "8px",
+                  background: "#10E79D",
+                  color: "#022019",
+                  padding: "3px 10px",
+                  fontSize: "10.5px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Auto-Fill ⚡
+              </button>
+            </div>
+          )}
+
+          <div
+            style={styles.otpRow}
+          >
             {[0, 1, 2, 3, 4, 5].map(
               (index) => (
                 <div
                   key={index}
                   style={{
                     ...styles.otpBox,
-                    ...(index < otp.length
+                    ...(index <
+                    otp.length
                       ? styles.otpBoxFilled
                       : {}),
                     ...(loading &&
@@ -519,7 +1133,8 @@ export default function MobileVerification({
                       : {}),
                   }}
                 >
-                  {otp[index] || ""}
+                  {otp[index] ||
+                    ""}
                 </div>
               )
             )}
@@ -532,36 +1147,51 @@ export default function MobileVerification({
               autoFocus
               maxLength={6}
               value={otp}
-              onChange={handleOtpChange}
+              onChange={
+                handleOtpChange
+              }
               onClick={() =>
                 otpRef.current?.focus()
               }
               aria-label="Enter OTP"
-              style={styles.hiddenOtpInput}
+              style={
+                styles.hiddenOtpInput
+              }
             />
           </div>
 
-          <div style={styles.statusArea}>
-            {loading && otp.length === 6 && (
-              <>
-                <Spinner />
-                <span>
-                  Verifying your code...
-                </span>
-              </>
-            )}
+          <div
+            style={
+              styles.statusArea
+            }
+          >
+            {loading &&
+              otp.length === 6 && (
+                <>
+                  <Spinner />
 
-            {!loading && message && (
-              <span
-                style={styles.successInline}
-              >
-                {message}
-              </span>
-            )}
+                  <span>
+                    Verifying your code...
+                  </span>
+                </>
+              )}
+
+            {!loading &&
+              message && (
+                <span
+                  style={
+                    styles.successInline
+                  }
+                >
+                  {message}
+                </span>
+              )}
 
             {error && (
               <span
-                style={styles.errorInline}
+                style={
+                  styles.errorInline
+                }
               >
                 {error}
               </span>
@@ -570,32 +1200,83 @@ export default function MobileVerification({
 
           <button
             type="button"
-            onClick={handleChangeNumber}
-            style={styles.changeNumber}
+            onClick={() => verifyOtpAutomatically(otp)}
+            disabled={loading || otp.length !== 6}
+            style={{
+              ...styles.primaryButton,
+              marginTop: "16px",
+              opacity: otp.length === 6 ? 1 : 0.45,
+              cursor: otp.length === 6 ? "pointer" : "not-allowed",
+            }}
+          >
+            {loading ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                <Spinner />
+                <span>Verifying code...</span>
+              </div>
+            ) : (
+              <span>Verify & Continue →</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={
+              handleChangeNumber
+            }
+            style={
+              styles.changeNumber
+            }
           >
             ← Change mobile number
           </button>
 
-          <div style={styles.securityNote}>
-            <span style={styles.securityDot} />
+          <div
+            style={
+              styles.securityNote
+            }
+          >
+            <span
+              style={
+                styles.securityDot
+              }
+            />
+
             Secure verification
           </div>
         </div>
 
-        <div style={styles.termsOtp}>
+        <div
+          style={styles.termsOtp}
+        >
           By continuing, you agree to our
           <br />
-          <span style={styles.termsGreen}>
+
+          <span
+            style={
+              styles.termsGreen
+            }
+          >
             Terms of Service
           </span>
+
           {" & "}
-          <span style={styles.termsGreen}>
+
+          <span
+            style={
+              styles.termsGreen
+            }
+          >
             Privacy Policy
           </span>
           .
         </div>
 
-        <div style={styles.bottomBrand}>
+        <div
+          style={
+            styles.bottomBrand
+          }
+        >
           ILS RANKER
         </div>
       </div>
@@ -629,31 +1310,39 @@ export default function MobileVerification({
 const styles = {
   page: {
     width: "100%",
+    minHeight: "100vh",
     minHeight: "100dvh",
-    height: "100dvh",
-    background: "#F4FBF7",
+    background:
+      "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
     display: "flex",
     justifyContent: "center",
-    overflow: "hidden",
+    alignItems: "stretch",
     fontFamily:
-      "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     boxSizing: "border-box",
+    overflow: "hidden",
   },
 
   screen: {
     width: "100%",
     maxWidth: "430px",
-    height: "100dvh",
-    minHeight: 0,
-    background:
-      "linear-gradient(180deg, #F4FBF7 0%, #F8FCFA 48%, #FFFFFF 100%)",
-    position: "relative",
-    overflow: "hidden",
+    height: "100%",
+    minHeight: "100dvh",
+    maxHeight: "100dvh",
+    margin: "0 auto",
+    background: "transparent",
     boxSizing: "border-box",
-    padding: "46px 28px 30px",
+    padding:
+      "max(28px, env(safe-area-inset-top, 28px)) 24px max(24px, env(safe-area-inset-bottom, 24px))",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+    position: "relative",
+    overflowY: "auto",
+    overflowX: "hidden",
+    WebkitOverflowScrolling: "touch",
   },
-
-  /* ================= TOP ================= */
 
   topArea: {
     width: "100%",
@@ -661,66 +1350,72 @@ const styles = {
     alignItems: "center",
     flexDirection: "column",
     textAlign: "center",
+    flexShrink: 0,
+    marginTop: "8px",
   },
 
   welcome: {
-    marginTop: "6px",
-    color: "#082F3C",
-    fontSize: "23px",
-    lineHeight: 1.15,
+    marginTop: "12px",
+    color: "#FFFFFF",
+    fontSize: "clamp(20px, 5.5vw, 24px)",
+    lineHeight: 1.2,
     fontWeight: 800,
-    letterSpacing: "-0.45px",
+    letterSpacing: "-0.4px",
   },
 
   brand: {
     marginTop: "2px",
-    color: "#007050",
-    fontSize: "28px",
-    lineHeight: 1.12,
-    fontWeight: 850,
-    letterSpacing: "-0.7px",
+    color: "#10E79D",
+    fontSize: "clamp(26px, 7vw, 32px)",
+    lineHeight: 1.15,
+    fontWeight: 900,
+    letterSpacing: "-0.6px",
   },
 
   subtitle: {
     marginTop: "8px",
-    color: "#647477",
-    fontSize: "9px",
-    lineHeight: 1.4,
+    color: "rgba(226, 232, 240, 0.72)",
+    fontSize: "12.5px",
+    lineHeight: 1.45,
     fontWeight: 500,
+    maxWidth: "320px",
   },
-
-  /* ================= MOBILE ================= */
 
   mobileSection: {
     width: "100%",
-    marginTop: "56px",
+    margin: "auto 0",
+    flexShrink: 0,
   },
 
   mobileBox: {
     width: "100%",
-    height: "53px",
-    border: "1px solid #DCE9E3",
-    borderRadius: "12px",
-    background: "rgba(255,255,255,.82)",
+    height: "54px",
+    border: "1px solid rgba(255, 255, 255, 0.16)",
+    borderRadius: "16px",
+    background: "rgba(255, 255, 255, 0.05)",
     display: "flex",
     alignItems: "center",
     boxSizing: "border-box",
-    boxShadow:
-      "0 4px 16px rgba(8,47,60,.035)",
-    backdropFilter: "blur(4px)",
+    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.35)",
+    backdropFilter: "blur(14px)",
+    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
   },
 
   country: {
     paddingLeft: "16px",
-    color: "#123A46",
-    fontSize: "11px",
+    color: "#10E79D",
+    fontSize: "13.5px",
     fontWeight: 800,
+    letterSpacing: "0.5px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
   },
 
   separator: {
     margin: "0 10px",
-    color: "#B4BFBD",
-    fontSize: "14px",
+    color: "rgba(255, 255, 255, 0.2)",
+    fontSize: "16px",
   },
 
   mobileInput: {
@@ -729,11 +1424,12 @@ const styles = {
     height: "100%",
     border: "none",
     outline: "none",
-    padding: "0 12px 0 3px",
+    padding: "0 14px 0 0",
     background: "transparent",
-    color: "#213D44",
-    fontSize: "11px",
-    fontWeight: 500,
+    color: "#FFFFFF",
+    fontSize: "14.5px",
+    fontWeight: 600,
+    letterSpacing: "0.5px",
   },
 
   autoRequest: {
@@ -742,116 +1438,196 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     gap: "6px",
-    color: "#007050",
-    fontSize: "7px",
+    color: "#34D399",
+    fontSize: "12px",
     fontWeight: 600,
+    marginTop: "6px",
+  },
+
+  primaryButton: {
+    width: "100%",
+    height: "50px",
+    marginTop: "12px",
+    border: "none",
+    borderRadius: "15px",
+    background: "linear-gradient(135deg, #10E79D 0%, #007050 100%)",
+    color: "#010F0E",
+    fontSize: "14.5px",
+    fontWeight: 900,
+    letterSpacing: "0.2px",
+    cursor: "pointer",
+    boxShadow: "0 8px 24px rgba(16, 231, 157, 0.35)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease",
   },
 
   orRow: {
     width: "100%",
     display: "flex",
     alignItems: "center",
-    gap: "11px",
-    margin: "5px 0 12px",
+    gap: "12px",
+    margin: "16px 0 14px",
   },
 
   orLine: {
     flex: 1,
     height: "1px",
-    background: "#DDE9E5",
+    background: "rgba(255, 255, 255, 0.12)",
   },
 
   orText: {
-    color: "#A2AAA8",
-    fontSize: "8px",
-    fontWeight: 600,
+    color: "rgba(226, 232, 240, 0.5)",
+    fontSize: "11px",
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "1px",
   },
 
   socialButton: {
     width: "100%",
-    height: "47px",
-    marginTop: "8px",
-    border: "1px solid #DFEAE5",
-    borderRadius: "11px",
-    background: "rgba(255,255,255,.78)",
-    color: "#2B4147",
+    height: "48px",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
+    borderRadius: "14px",
+    background: "rgba(255, 255, 255, 0.05)",
+    color: "#FFFFFF",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "10px",
-    fontSize: "9px",
-    fontWeight: 650,
+    fontSize: "14px",
+    fontWeight: 700,
     cursor: "pointer",
-    transition: "transform .12s ease",
+    backdropFilter: "blur(10px)",
+    transition: "all 0.2s ease",
+    marginBottom: "10px",
   },
 
-  /* ================= OTP ================= */
+  errorMessage: {
+    width: "100%",
+    marginTop: "8px",
+    textAlign: "center",
+    color: "#F87171",
+    fontSize: "11.5px",
+    fontWeight: 600,
+    lineHeight: 1.4,
+    flexShrink: 0,
+  },
+
+  successMessage: {
+    width: "100%",
+    marginTop: "8px",
+    textAlign: "center",
+    color: "#34D399",
+    fontSize: "11.5px",
+    fontWeight: 600,
+    lineHeight: 1.4,
+    flexShrink: 0,
+  },
+
+  terms: {
+    width: "100%",
+    marginTop: "16px",
+    textAlign: "center",
+    color: "rgba(226, 232, 240, 0.5)",
+    fontSize: "11px",
+    lineHeight: 1.6,
+    flexShrink: 0,
+  },
+
+  termsOtp: {
+    width: "100%",
+    marginTop: "18px",
+    textAlign: "center",
+    color: "rgba(226, 232, 240, 0.5)",
+    fontSize: "11px",
+    lineHeight: 1.6,
+  },
+
+  termsGreen: {
+    color: "#10E79D",
+    fontWeight: 600,
+    textDecoration: "underline",
+    cursor: "pointer",
+  },
+
+  bottomBrand: {
+    width: "100%",
+    marginTop: "12px",
+    textAlign: "center",
+    color: "rgba(226, 232, 240, 0.3)",
+    fontSize: "10px",
+    fontWeight: 700,
+    letterSpacing: "1.4px",
+    paddingBottom: "4px",
+    flexShrink: 0,
+  },
 
   otpSection: {
     width: "100%",
-    marginTop: "59px",
+    margin: "auto 0",
     textAlign: "center",
+    flexShrink: 0,
   },
 
   otpHeading: {
-    color: "#082F3C",
-    fontSize: "16px",
+    color: "#FFFFFF",
+    fontSize: "clamp(20px, 5.5vw, 24px)",
     lineHeight: 1.2,
-    fontWeight: 800,
+    fontWeight: 900,
   },
 
   otpDescription: {
     marginTop: "8px",
-    color: "#8A9798",
-    fontSize: "8px",
-    lineHeight: 1.4,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: "12.5px",
+    lineHeight: 1.45,
   },
 
   phoneNumber: {
-    marginTop: "3px",
-    color: "#007050",
-    fontSize: "9px",
-    fontWeight: 700,
-    letterSpacing: ".15px",
+    marginTop: "4px",
+    color: "#10E79D",
+    fontSize: "14px",
+    fontWeight: 800,
+    letterSpacing: "0.5px",
   },
 
   otpRow: {
     position: "relative",
     width: "100%",
     display: "grid",
-    gridTemplateColumns:
-      "repeat(6, minmax(0, 1fr))",
-    gap: "7px",
-    marginTop: "21px",
+    gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+    gap: "8px",
+    marginTop: "24px",
   },
 
   otpBox: {
     height: "54px",
-    border: "1px solid #DDE8E4",
-    borderRadius: "11px",
-    background: "rgba(255,255,255,.9)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
+    borderRadius: "14px",
+    background: "rgba(255, 255, 255, 0.05)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#173B45",
-    fontSize: "18px",
+    color: "#FFFFFF",
+    fontSize: "20px",
     fontWeight: 800,
-    transition: "all .15s ease",
-    boxShadow:
-      "0 2px 8px rgba(8,47,60,.025)",
+    transition: "all .18s ease",
+    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
+    backdropFilter: "blur(10px)",
     minWidth: 0,
   },
 
   otpBoxFilled: {
-    border: "1.5px solid #007050",
-    background: "#F2FAF6",
-    color: "#082F3C",
-    boxShadow:
-      "0 4px 12px rgba(0,112,80,.08)",
+    border: "1.5px solid #10E79D",
+    background: "rgba(16, 231, 157, 0.12)",
+    color: "#FFFFFF",
+    boxShadow: "0 0 16px rgba(16, 231, 157, 0.35)",
   },
 
   otpBoxLoading: {
-    border: "1.5px solid #007050",
+    border: "1.5px solid #10E79D",
   },
 
   hiddenOtpInput: {
@@ -867,106 +1643,50 @@ const styles = {
   },
 
   statusArea: {
-    minHeight: "30px",
+    minHeight: "34px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "6px",
-    marginTop: "12px",
-    fontSize: "7px",
+    gap: "8px",
+    marginTop: "14px",
+    fontSize: "12px",
     fontWeight: 600,
   },
 
   successInline: {
-    color: "#007050",
+    color: "#34D399",
   },
 
   errorInline: {
-    color: "#D85B65",
+    color: "#F87171",
   },
 
   changeNumber: {
-    marginTop: "5px",
+    marginTop: "10px",
     border: "none",
     background: "transparent",
-    color: "#007050",
-    fontSize: "8px",
+    color: "#10E79D",
+    fontSize: "12px",
     fontWeight: 700,
     cursor: "pointer",
-    padding: "5px",
+    padding: "6px",
   },
 
   securityNote: {
-    marginTop: "18px",
+    marginTop: "20px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "5px",
-    color: "#98A3A1",
-    fontSize: "7px",
+    gap: "6px",
+    color: "rgba(226, 232, 240, 0.6)",
+    fontSize: "11px",
   },
 
   securityDot: {
     width: "6px",
     height: "6px",
     borderRadius: "50%",
-    background: "#007050",
-    opacity: 0.8,
-  },
-
-  /* ================= TERMS ================= */
-
-  terms: {
-    position: "absolute",
-    left: "28px",
-    right: "28px",
-    bottom: "72px",
-    textAlign: "center",
-    color: "#9AA5A3",
-    fontSize: "7px",
-    lineHeight: 1.7,
-  },
-
-  termsOtp: {
-    position: "absolute",
-    left: "28px",
-    right: "28px",
-    bottom: "72px",
-    textAlign: "center",
-    color: "#9AA5A3",
-    fontSize: "7px",
-    lineHeight: 1.7,
-  },
-
-  termsGreen: {
-    color: "#007050",
-    fontWeight: 700,
-  },
-
-  /* ================= ERROR ================= */
-
-  errorMessage: {
-    position: "absolute",
-    left: "24px",
-    right: "24px",
-    bottom: "48px",
-    textAlign: "center",
-    color: "#D85B65",
-    fontSize: "7px",
-    fontWeight: 600,
-  },
-
-  /* ================= BRAND FOOTER ================= */
-
-  bottomBrand: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: "18px",
-    textAlign: "center",
-    color: "#C8D7D2",
-    fontSize: "6px",
-    fontWeight: 700,
-    letterSpacing: "1.4px",
+    background: "#10E79D",
+    boxShadow: "0 0 6px #10E79D",
   },
 };

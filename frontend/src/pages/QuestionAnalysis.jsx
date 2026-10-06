@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from "react";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  red: "#D94B55",
-  blue: "#3679C9",
-  purple: "#7652C8",
-  yellow: "#C78A13",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+  softMint: "rgba(16, 231, 157, 0.12)",
+  white: "rgba(255, 255, 255, 0.05)",
+  muted: "rgba(226, 232, 240, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  red: "#FF5E62",
+  blue: "#38BDF8",
+  purple: "#A855F7",
+  yellow: "#FBBF24",
 };
 
 const questions = [
@@ -205,7 +205,7 @@ function Icon({ name, size = 20, stroke = C.navy }) {
   return <svg {...common}>{paths[name]}</svg>;
 }
 
-export default function QuestionAnalysis({ onBack }) {
+export default function QuestionAnalysis({ onBack, onOpenSection }) {
   const [filter, setFilter] = useState("all");
   const [selectedQuestion, setSelectedQuestion] =
     useState(null);
@@ -256,12 +256,13 @@ export default function QuestionAnalysis({ onBack }) {
   if (selectedQuestion) {
     return (
       <div style={styles.page}>
-        <Header
-          onBack={() => setSelectedQuestion(null)}
-          right="Question Review"
-        />
+        <div style={styles.mobileShell}>
+          <Header
+            onBack={() => setSelectedQuestion(null)}
+            right="Question Review"
+          />
 
-        <main style={styles.container}>
+          <main style={styles.container}>
           <div style={styles.breadcrumb}>
             <span>Analysis</span>
             <span>›</span>
@@ -411,29 +412,27 @@ export default function QuestionAnalysis({ onBack }) {
           </section>
 
           <button
-            style={styles.primaryButton}
+            type="button"
+            style={styles.secondaryBackButton}
             onClick={() => setSelectedQuestion(null)}
           >
-            Back to Question Analysis
-            <Icon
-              name="arrow"
-              size={17}
-              stroke="#FFFFFF"
-            />
+            ← Back to Question Analysis
           </button>
         </main>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={styles.page}>
-      <Header
-        onBack={onBack}
-        right="Question Analysis"
-      />
+      <div style={styles.mobileShell}>
+        <Header
+          onBack={onBack}
+          right="Question Analysis"
+        />
 
-      <main style={styles.container}>
+        <main style={styles.container}>
         <div style={styles.kicker}>
           QUESTION-LEVEL PERFORMANCE
         </div>
@@ -685,18 +684,25 @@ export default function QuestionAnalysis({ onBack }) {
           </div>
         </section>
 
+        {onOpenSection && (
+          <button
+            type="button"
+            style={styles.primaryButton}
+            onClick={() => onOpenSection("weakness-insights")}
+          >
+            <span>View Weakness Insights →</span>
+          </button>
+        )}
+
         <button
-          style={styles.primaryButton}
+          type="button"
+          style={styles.secondaryBackButton}
           onClick={onBack}
         >
-          Back to Chapter Analysis
-          <Icon
-            name="arrow"
-            size={17}
-            stroke="#FFFFFF"
-          />
+          ← Back to Chapter Analysis
         </button>
       </main>
+      </div>
     </div>
   );
 }
@@ -770,27 +776,41 @@ function ReviewMeta({ label, value }) {
 const styles = {
   page: {
     minHeight: "100vh",
+    minHeight: "100dvh",
     background: C.mint,
     color: C.navy,
+    display: "flex",
+    justifyContent: "center",
     fontFamily:
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  },
+
+  mobileShell: {
+    width: "100%",
+    maxWidth: "430px",
+    minHeight: "100dvh",
+    boxSizing: "border-box",
   },
 
   header: {
     position: "sticky",
     top: 0,
     zIndex: 20,
-    background: C.white,
+    background: "rgba(6, 49, 43, 0.85)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
     borderBottom: `1px solid ${C.border}`,
   },
 
   headerInner: {
-    maxWidth: 920,
+    width: "100%",
+    maxWidth: "430px",
     margin: "0 auto",
-    padding: "15px 20px",
+    padding: "12px 16px",
     display: "flex",
     alignItems: "center",
     gap: 12,
+    boxSizing: "border-box",
   },
 
   backButton: {
@@ -798,7 +818,8 @@ const styles = {
     height: 40,
     borderRadius: 12,
     border: `1px solid ${C.border}`,
-    background: C.white,
+    background: "rgba(255, 255, 255, 0.08)",
+    color: "#10E79D",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -823,15 +844,15 @@ const styles = {
 
   headerRight: {
     color: C.green,
-    fontSize: 10.5,
-    fontWeight: 900,
+    fontSize: 12,
+    fontWeight: 800,
   },
 
   container: {
     width: "100%",
-    maxWidth: 920,
+    maxWidth: "430px",
     margin: "0 auto",
-    padding: "28px 20px 44px",
+    padding: "16px 16px 125px",
     boxSizing: "border-box",
   },
 
@@ -845,26 +866,25 @@ const styles = {
 
   title: {
     margin: 0,
-    fontSize: 29,
-    lineHeight: 1.18,
+    fontSize: 22,
+    lineHeight: 1.2,
     fontWeight: 900,
-    letterSpacing: -0.7,
+    letterSpacing: -0.5,
   },
 
   subtitle: {
-    margin: "8px 0 0",
+    margin: "6px 0 0",
     color: C.muted,
     fontSize: 12.5,
-    lineHeight: 1.55,
-    maxWidth: 660,
+    lineHeight: 1.5,
   },
 
   summaryCard: {
-    marginTop: 21,
-    padding: 18,
+    marginTop: 16,
+    padding: 16,
     background: C.white,
     border: `1px solid ${C.border}`,
-    borderRadius: 20,
+    borderRadius: 18,
     boxShadow: "0 7px 21px rgba(8,47,60,0.045)",
   },
 
@@ -872,35 +892,36 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
   },
 
   summaryEyebrow: {
     color: C.green,
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: 900,
     letterSpacing: 0.8,
   },
 
   summaryValue: {
     marginTop: 4,
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: 900,
+    color: "#FFFFFF",
   },
 
   summaryText: {
     marginTop: 3,
     color: C.muted,
-    fontSize: 10.5,
+    fontSize: 11.5,
     lineHeight: 1.45,
   },
 
   accuracyCircle: {
-    width: 86,
-    height: 86,
+    width: 82,
+    height: 82,
     borderRadius: "50%",
     background:
-      "conic-gradient(#007050 0 72%, #EAF5F1 72% 100%)",
+      "conic-gradient(#10E79D 0 80%, rgba(255, 255, 255, 0.08) 80% 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -908,14 +929,14 @@ const styles = {
   },
 
   accuracyInner: {
-    width: 63,
-    height: 63,
+    width: 60,
+    height: 60,
     borderRadius: "50%",
-    background: C.white,
+    background: "#031D1B",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: C.green,
+    color: "#10E79D",
     fontSize: 15,
     fontWeight: 900,
   },
@@ -1001,33 +1022,34 @@ const styles = {
     border: `1px solid ${C.border}`,
     background: C.white,
     color: C.muted,
-    borderRadius: 9,
-    padding: "7px 10px",
-    fontSize: 9,
-    fontWeight: 800,
+    borderRadius: 10,
+    padding: "8px 14px",
+    fontSize: 12,
+    fontWeight: 700,
     cursor: "pointer",
     whiteSpace: "nowrap",
   },
 
   filterPillActive: {
-    background: C.green,
-    borderColor: C.green,
-    color: C.white,
+    background: "#10E79D",
+    borderColor: "#10E79D",
+    color: "#010F0E",
+    fontWeight: 800,
   },
 
   list: {
-    marginTop: 11,
+    marginTop: 14,
     display: "flex",
     flexDirection: "column",
-    gap: 8,
+    gap: 10,
   },
 
   questionRow: {
     width: "100%",
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    padding: 13,
+    gap: 12,
+    padding: 15,
     borderRadius: 16,
     border: `1px solid ${C.border}`,
     background: C.white,
@@ -1036,14 +1058,14 @@ const styles = {
   },
 
   questionNumber: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 9,
-    fontWeight: 900,
+    fontSize: 12,
+    fontWeight: 800,
     flexShrink: 0,
   },
 
@@ -1061,8 +1083,8 @@ const styles = {
 
   chapterName: {
     color: C.green,
-    fontSize: 8.5,
-    fontWeight: 900,
+    fontSize: 11,
+    fontWeight: 800,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -1070,44 +1092,45 @@ const styles = {
   statusBadge: {
     display: "flex",
     alignItems: "center",
-    gap: 4,
-    padding: "4px 6px",
-    borderRadius: 6,
-    fontSize: 7.5,
-    fontWeight: 900,
+    gap: 5,
+    padding: "4px 8px",
+    borderRadius: 7,
+    fontSize: 11,
+    fontWeight: 700,
     textTransform: "capitalize",
     whiteSpace: "nowrap",
   },
 
   questionPreview: {
-    marginTop: 5,
-    color: C.navy,
-    fontSize: 11,
-    fontWeight: 750,
-    lineHeight: 1.4,
+    marginTop: 6,
+    color: "#FFFFFF",
+    fontSize: 13.5,
+    fontWeight: 650,
+    lineHeight: 1.45,
   },
 
   questionMeta: {
-    marginTop: 6,
+    marginTop: 7,
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    color: C.muted,
-    fontSize: 8.5,
-    fontWeight: 700,
+    gap: 8,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 11.5,
+    fontWeight: 600,
   },
 
   timeMeta: {
     display: "flex",
     alignItems: "center",
-    gap: 3,
+    gap: 4,
   },
 
   rowArrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
-    background: C.mint,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    background: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1115,20 +1138,22 @@ const styles = {
   },
 
   insightCard: {
-    marginTop: 17,
+    marginTop: 18,
     padding: 16,
     borderRadius: 18,
-    background: C.softMint,
+    background: "rgba(16, 231, 157, 0.08)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     display: "flex",
     alignItems: "flex-start",
-    gap: 11,
+    gap: 12,
   },
 
   insightIcon: {
-    width: 39,
-    height: 39,
-    borderRadius: 11,
-    background: C.white,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1137,27 +1162,28 @@ const styles = {
 
   insightEyebrow: {
     color: C.green,
-    fontSize: 8,
-    fontWeight: 900,
+    fontSize: 10,
+    fontWeight: 800,
     letterSpacing: 0.8,
   },
 
   insightTitle: {
     marginTop: 4,
-    fontSize: 12.5,
-    fontWeight: 900,
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   insightText: {
     marginTop: 4,
-    color: C.muted,
-    fontSize: 10,
+    color: "rgba(226, 232, 240, 0.75)",
+    fontSize: 12,
     lineHeight: 1.5,
   },
 
   emptyCard: {
-    marginTop: 12,
-    padding: "35px 20px",
+    marginTop: 14,
+    padding: "36px 20px",
     borderRadius: 18,
     background: C.white,
     border: `1px solid ${C.border}`,
@@ -1165,20 +1191,22 @@ const styles = {
   },
 
   emptyIcon: {
-    width: 51,
-    height: 51,
-    borderRadius: 15,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     margin: "0 auto",
-    background: "#F7F9F8",
+    background: "rgba(255, 255, 255, 0.06)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
 
   emptyTitle: {
-    marginTop: 12,
-    fontSize: 13,
-    fontWeight: 900,
+    marginTop: 14,
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   emptyText: {
@@ -1192,17 +1220,34 @@ const styles = {
     marginTop: 18,
     padding: "14px 16px",
     border: "none",
+    borderRadius: 14,
+    background: "linear-gradient(135deg, #10E79D 0%, #007050 100%)",
+    color: "#010F0E",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    fontSize: 14,
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 6px 20px rgba(16, 231, 157, 0.35)",
+  },
+
+  secondaryBackButton: {
+    width: "100%",
+    marginTop: 10,
+    padding: "13px 16px",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
     borderRadius: 13,
-    background: C.green,
-    color: C.white,
+    background: "rgba(255, 255, 255, 0.05)",
+    color: "#10E79D",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     fontSize: 13,
-    fontWeight: 900,
+    fontWeight: 800,
     cursor: "pointer",
-    boxShadow: "0 8px 18px rgba(0,112,80,0.15)",
   },
 
   breadcrumb: {

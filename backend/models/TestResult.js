@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
 
+/* =========================================================
+   ANSWER RESULT
+========================================================= */
+
 const AnswerSchema = new mongoose.Schema(
   {
     questionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      default: null,
+      type: String,
+      required: true,
     },
 
     selectedAnswer: {
@@ -37,202 +41,232 @@ const AnswerSchema = new mongoose.Schema(
   }
 );
 
-const SubjectResultSchema = new mongoose.Schema(
-  {
-    subjectId: {
-      type: String,
-      required: true,
-    },
+/* =========================================================
+   SUBJECT RESULT
+========================================================= */
 
-    totalQuestions: {
-      type: Number,
-      default: 0,
-    },
+const SubjectResultSchema =
+  new mongoose.Schema(
+    {
+      subjectId: {
+        type: String,
+        required: true,
+      },
 
-    attempted: {
-      type: Number,
-      default: 0,
-    },
+      totalQuestions: {
+        type: Number,
+        default: 0,
+      },
 
-    correct: {
-      type: Number,
-      default: 0,
-    },
+      attempted: {
+        type: Number,
+        default: 0,
+      },
 
-    incorrect: {
-      type: Number,
-      default: 0,
-    },
+      correct: {
+        type: Number,
+        default: 0,
+      },
 
-    skipped: {
-      type: Number,
-      default: 0,
-    },
+      incorrect: {
+        type: Number,
+        default: 0,
+      },
 
-    score: {
-      type: Number,
-      default: 0,
-    },
+      skipped: {
+        type: Number,
+        default: 0,
+      },
 
-    accuracy: {
-      type: Number,
-      default: 0,
-    },
-  },
-  {
-    _id: false,
-  }
-);
+      score: {
+        type: Number,
+        default: 0,
+      },
 
-const ChapterResultSchema = new mongoose.Schema(
-  {
-    subjectId: {
-      type: String,
-      required: true,
+      accuracy: {
+        type: Number,
+        default: 0,
+      },
     },
+    {
+      _id: false,
+    }
+  );
 
-    chapterId: {
-      type: String,
-      required: true,
-    },
+/* =========================================================
+   CHAPTER RESULT
+========================================================= */
 
-    chapterName: {
-      type: String,
-      required: true,
-    },
+const ChapterResultSchema =
+  new mongoose.Schema(
+    {
+      subjectId: {
+        type: String,
+        required: true,
+      },
 
-    totalQuestions: {
-      type: Number,
-      default: 0,
-    },
+      chapterId: {
+        type: String,
+        required: true,
+      },
 
-    attempted: {
-      type: Number,
-      default: 0,
-    },
+      chapterName: {
+        type: String,
+        required: true,
+      },
 
-    correct: {
-      type: Number,
-      default: 0,
-    },
+      totalQuestions: {
+        type: Number,
+        default: 0,
+      },
 
-    incorrect: {
-      type: Number,
-      default: 0,
-    },
+      attempted: {
+        type: Number,
+        default: 0,
+      },
 
-    skipped: {
-      type: Number,
-      default: 0,
-    },
+      correct: {
+        type: Number,
+        default: 0,
+      },
 
-    score: {
-      type: Number,
-      default: 0,
-    },
+      incorrect: {
+        type: Number,
+        default: 0,
+      },
 
-    accuracy: {
-      type: Number,
-      default: 0,
-    },
-  },
-  {
-    _id: false,
-  }
-);
+      skipped: {
+        type: Number,
+        default: 0,
+      },
 
-const TestResultSchema = new mongoose.Schema(
-  {
-    mobile: {
-      type: String,
-      required: true,
-      index: true,
-    },
+      score: {
+        type: Number,
+        default: 0,
+      },
 
-    testId: {
-      type: String,
-      required: true,
+      accuracy: {
+        type: Number,
+        default: 0,
+      },
     },
+    {
+      _id: false,
+    }
+  );
 
-    testTitle: {
-      type: String,
-      required: true,
-    },
+/* =========================================================
+   TEST RESULT
+========================================================= */
 
-    exam: {
-      type: String,
-      required: true,
-    },
+const TestResultSchema =
+  new mongoose.Schema(
+    {
+      mobile: {
+        type: String,
+        default: "",
+        index: true,
+      },
 
-    totalQuestions: {
-      type: Number,
-      default: 0,
-    },
+      email: {
+        type: String,
+        default: "",
+        trim: true,
+        lowercase: true,
+        index: true,
+      },
 
-    attempted: {
-      type: Number,
-      default: 0,
-    },
+      googleId: {
+        type: String,
+        default: "",
+        trim: true,
+        index: true,
+      },
 
-    correct: {
-      type: Number,
-      default: 0,
-    },
+      testId: {
+        type: String,
+        required: true,
+      },
 
-    incorrect: {
-      type: Number,
-      default: 0,
-    },
+      testTitle: {
+        type: String,
+        required: true,
+      },
 
-    skipped: {
-      type: Number,
-      default: 0,
-    },
+      exam: {
+        type: String,
+        required: true,
+      },
 
-    score: {
-      type: Number,
-      default: 0,
-    },
+      totalQuestions: {
+        type: Number,
+        default: 0,
+      },
 
-    totalMarks: {
-      type: Number,
-      default: 0,
-    },
+      attempted: {
+        type: Number,
+        default: 0,
+      },
 
-    accuracy: {
-      type: Number,
-      default: 0,
-    },
+      correct: {
+        type: Number,
+        default: 0,
+      },
 
-    estimatedRank: {
-      type: Number,
-      default: null,
-    },
+      incorrect: {
+        type: Number,
+        default: 0,
+      },
 
-    answers: {
-      type: [AnswerSchema],
-      default: [],
-    },
+      skipped: {
+        type: Number,
+        default: 0,
+      },
 
-    subjectResults: {
-      type: [SubjectResultSchema],
-      default: [],
-    },
+      score: {
+        type: Number,
+        default: 0,
+      },
 
-    chapterResults: {
-      type: [ChapterResultSchema],
-      default: [],
-    },
+      totalMarks: {
+        type: Number,
+        default: 0,
+      },
 
-    submittedAt: {
-      type: Date,
-      default: Date.now,
+      accuracy: {
+        type: Number,
+        default: 0,
+      },
+
+      estimatedRank: {
+        type: Number,
+        default: null,
+      },
+
+      answers: {
+        type: [AnswerSchema],
+        default: [],
+      },
+
+      subjectResults: {
+        type: [SubjectResultSchema],
+        default: [],
+      },
+
+      chapterResults: {
+        type: [ChapterResultSchema],
+        default: [],
+      },
+
+      submittedAt: {
+        type: Date,
+        default: Date.now,
+      },
     },
-  },
-  {
-    timestamps: true,
-  }
-);
+    {
+      timestamps: true,
+    }
+  );
 
 const TestResult =
   mongoose.models.TestResult ||

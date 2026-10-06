@@ -1,66 +1,114 @@
 import React from "react";
 
-function ILSLogo() {
-  return (
-    <div className="page-ils-logo">
-      <svg
-        width="30"
-        height="38"
-        viewBox="0 0 43 52"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <path
-          d="M25.5 8C31 2 38 1 42 1C41 9 37 15 29 18C25 19.5 21.5 19 18.5 18"
-          fill="#41AB6B"
-        />
-
-        <path
-          d="M8 15C14 18 18 23 18 30V51"
-          stroke="#41AB6B"
-          strokeWidth="6"
-          strokeLinecap="round"
-        />
-
-        <path
-          d="M25 17V51"
-          stroke="#41AB6B"
-          strokeWidth="6"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      <div className="page-ils-logo-text">
-        <strong>ILS</strong>
-        <span>Exam Prep</span>
-      </div>
-    </div>
-  );
-}
-
 export default function PageHeader({
   title,
+  onBack,
   onOpenMenu,
 }) {
+  const handleBack = onBack || (onOpenMenu ? () => onOpenMenu("menu") : null);
+
   return (
-    <header className="page-header">
-      <button
-        type="button"
-        className="page-menu-button"
-        onClick={() => onOpenMenu("menu")}
-        aria-label="Open menu"
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        width: "100%",
+        minHeight: "64px",
+        background: "rgba(6, 49, 43, 0.85)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "430px",
+          margin: "0 auto",
+          minHeight: "64px",
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          boxSizing: "border-box",
+        }}
       >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
+        {handleBack && (
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label="Go back"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "12px",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              background: "rgba(255, 255, 255, 0.08)",
+              color: "#10E79D",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#10E79D"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
 
-      <div className="page-header-title">
-        {title}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: "18px",
+              fontWeight: 900,
+              letterSpacing: "1px",
+              lineHeight: 1,
+              color: "#FFFFFF",
+            }}
+          >
+            ILS RANKER
+          </div>
+          <div
+            style={{
+              marginTop: "4px",
+              color: "rgba(226, 232, 240, 0.65)",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.8px",
+            }}
+          >
+            KNOW YOUR POTENTIAL
+          </div>
+        </div>
+
+        {title && (
+          <div
+            style={{
+              color: "#10E79D",
+              fontSize: "13px",
+              fontWeight: 800,
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {title}
+          </div>
+        )}
       </div>
-
-      <ILSLogo />
     </header>
   );
 }

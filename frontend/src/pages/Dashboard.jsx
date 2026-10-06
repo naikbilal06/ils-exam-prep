@@ -1,66 +1,57 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 
-const subjectProgress = {
-  biology: {
-    name: "Biology",
-    value: 72,
-    status: "Strong",
-    icon: "✓",
-    bg: "#EAF8F3",
-    color: "#007050",
-  },
-
-  chemistry: {
-    name: "Chemistry",
-    value: 58,
-    status: "Needs Work",
-    icon: "♨",
-    bg: "#FFF5E4",
-    color: "#C78A13",
-  },
-
-  physics: {
-    name: "Physics",
-    value: 43,
-    status: "Focus Here",
-    icon: "♥",
-    bg: "#FFF0F2",
-    color: "#D94B55",
-  },
-
-  mathematics: {
-    name: "Mathematics",
-    value: 72,
-    status: "Good",
-    icon: "∑",
-    bg: "#EEF4FF",
-    color: "#3679C9",
-  },
-
-  english: {
-    name: "English",
-    value: 58,
-    status: "Needs Work",
-    icon: "A",
-    bg: "#F3EEFF",
-    color: "#7652C8",
-  },
-
-  "general-test": {
-    name: "General Test",
-    value: 66,
-    status: "Good",
-    icon: "▥",
-    bg: "#EAF8F3",
-    color: "#007050",
-  },
+const subjectIconMap = {
+  biology: "🌿",
+  chemistry: "⚗",
+  physics: "⚛",
+  mathematics: "∑",
+  english: "A",
+  "general-test": "▥",
 };
 
-const fallbackSubjects = [
-  subjectProgress.biology,
-  subjectProgress.chemistry,
-  subjectProgress.physics,
-];
+function getSubjectPresentation(subjectId, subjectName, accuracy, attempted) {
+  const rawId = String(subjectId || subjectName || "").toLowerCase().trim();
+  const icon = subjectIconMap[rawId] || "•";
+
+  if (attempted === 0 || attempted === undefined || attempted === null) {
+    return {
+      id: rawId,
+      name: subjectName || (rawId.charAt(0).toUpperCase() + rawId.slice(1)),
+      value: 0,
+      hasData: false,
+      status: "Ready",
+      statusColor: "#10E79D",
+      statusBg: "rgba(16, 231, 157, 0.12)",
+      icon,
+    };
+  }
+
+  const acc = Math.round(Number(accuracy) || 0);
+  let status = "Needs Work";
+  let statusColor = "#F87171";
+  let statusBg = "rgba(248, 113, 113, 0.15)";
+
+  if (acc >= 75) {
+    status = "Strong";
+    statusColor = "#10E79D";
+    statusBg = "rgba(16, 231, 157, 0.15)";
+  } else if (acc >= 50) {
+    status = "Good";
+    statusColor = "#38BDF8";
+    statusBg = "rgba(56, 189, 248, 0.15)";
+  }
+
+  return {
+    id: rawId,
+    name: subjectName || (rawId.charAt(0).toUpperCase() + rawId.slice(1)),
+    value: acc,
+    hasData: true,
+    status,
+    statusColor,
+    statusBg,
+    icon,
+  };
+}
 
 function Icon({ type, size = 24 }) {
   const common = {
@@ -204,6 +195,8 @@ function QuickAction({
 
 export default function Dashboard({
   profile,
+  activeExam,
+  onActiveExamChange,
   onOpenSection,
 }) {
   const name =
@@ -212,11 +205,31 @@ export default function Dashboard({
   const firstName =
     name.split(" ")[0];
 
-  const selectedExamIds =
-    profile?.exams || [];
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      return { text: "Good Morning", emoji: "👋" };
+    }
+    if (hour >= 12 && hour < 17) {
+      return { text: "Good Afternoon", emoji: "☀️" };
+    }
+    if (hour >= 17 && hour < 22) {
+      return { text: "Good Evening", emoji: "🌆" };
+    }
+    return { text: "Good Night", emoji: "🌙" };
+  }, []);
 
-  const selectedSubjectIds =
-    profile?.subjects || [];
+  const selectedExamIds = Array.isArray(
+    profile?.exams
+  )
+    ? profile.exams
+    : [];
+
+  const selectedSubjectIds = Array.isArray(
+    profile?.subjects
+  )
+    ? profile.subjects
+    : [];
 
   const examNameMap = {
     neet: "NEET UG",
@@ -229,22 +242,131 @@ export default function Dashboard({
     paramedical: "Paramedical",
   };
 
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:3000";
+
+  const [analytics, setAnalytics] = useState(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  // Fetch real analytics from backend
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAnalytics() {
+      try {
+        const mobile =
+          profile?.mobile ||
+          localStorage.getItem("ils_user_mobile") ||
+          "";
+
+        const email =
+          profile?.email ||
+          "";
+
+        const googleId =
+          profile?.googleId ||
+          "";
+
+        const params = new URLSearchParams();
+        if (mobile) params.set("mobile", mobile);
+        if (email) params.set("email", email);
+        if (googleId) params.set("googleId", googleId);
+
+        const res = await fetch(`${API_URL}/api/analytics?${params.toString()}`);
+        if (!res.ok) throw new Error("Failed to load analytics");
+        const data = await res.json();
+        if (!cancelled && data?.success) {
+          setAnalytics(data);
+        }
+      } catch (err) {
+        console.warn("Dashboard analytics fetch notice:", err);
+      } finally {
+        if (!cancelled) setLoadingAnalytics(false);
+      }
+    }
+
+    void loadAnalytics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    API_URL,
+    profile?.mobile,
+    profile?.email,
+    profile?.googleId,
+    activeExam,
+  ]);
+
+  /*
+   * Active exam:
+   * 1. Use activeExam if set.
+   * 2. Otherwise use the first saved exam.
+   * 3. Fallback to NEET.
+   */
+  const selectedExamId =
+    activeExam ||
+    (selectedExamIds.length > 0 ? selectedExamIds[0] : "neet");
+
   const selectedExam =
-    examNameMap[selectedExamIds[0]] ||
+    examNameMap[selectedExamId] ||
     "NEET UG";
 
-  const selectedSubjects =
-    selectedSubjectIds
-      .map((id) => subjectProgress[id])
-      .filter(Boolean);
+  const realSubjectsFromAPI = Array.isArray(analytics?.subjects)
+    ? analytics.subjects
+    : [];
 
-  const preparationSubjects =
-    selectedSubjects.length > 0
-      ? selectedSubjects.slice(0, 3)
-      : fallbackSubjects;
+  const preparationSubjects = useMemo(() => {
+    // If real analytics has subjects with data, display real live performance!
+    if (realSubjectsFromAPI.length > 0) {
+      return realSubjectsFromAPI.slice(0, 3).map((sub) =>
+        getSubjectPresentation(
+          sub.subjectId,
+          sub.subjectName,
+          sub.accuracy,
+          sub.attempted
+        )
+      );
+    }
+
+    // Default based on active exam type
+    const isJeeExam = selectedExamId?.includes("jee");
+    const defaultIds = isJeeExam
+      ? ["mathematics", "physics", "chemistry"]
+      : ["biology", "chemistry", "physics"];
+
+    return defaultIds.map((id) =>
+      getSubjectPresentation(
+        id,
+        examNameMap[id] || (id.charAt(0).toUpperCase() + id.slice(1)),
+        0,
+        0
+      )
+    );
+  }, [realSubjectsFromAPI, selectedExamId]);
+
+  const totalCompletedTests = analytics?.overview?.totalTests || 0;
+  const bestScoreVal = analytics?.overview?.bestScore || 0;
+  const avgAccuracyVal = analytics?.overview?.averageAccuracy || 0;
 
   const open = (section) => {
     onOpenSection(section);
+  };
+
+  const handleExamChange = (event) => {
+    const examId = event.target.value;
+
+    if (!examId) {
+      return;
+    }
+
+    if (
+      typeof onActiveExamChange ===
+      "function"
+    ) {
+      onActiveExamChange(examId);
+    }
   };
 
   return (
@@ -292,11 +414,19 @@ export default function Dashboard({
               </div>
 
               <h1 style={styles.greetingTitle}>
-                Good Morning, {firstName} 👋
+                {greeting.text}, {firstName} {greeting.emoji}
               </h1>
 
-              <div style={styles.greetingExam}>
-                {selectedExam} • 2026
+              {/* ACTIVE EXAM PILL - Shows strictly the one selected exam */}
+              <div
+                style={styles.activeExamPill}
+                onClick={() => open("rank-predictor")}
+                title="Active Exam • Tap to switch"
+                role="button"
+                tabIndex={0}
+              >
+                <span style={styles.activeExamDot} />
+                <span>{selectedExam} • 2026</span>
               </div>
             </div>
 
@@ -328,7 +458,9 @@ export default function Dashboard({
                 </div>
 
                 <div style={styles.testSubtitle}>
-                  Analyse • Predict • Improve
+                  {totalCompletedTests > 0
+                    ? `${totalCompletedTests} Tests Taken • Best: ${bestScoreVal} • Acc: ${avgAccuracyVal}%`
+                    : "Analyse • Predict • Improve"}
                 </div>
               </div>
             </div>
@@ -355,8 +487,8 @@ export default function Dashboard({
                   Predictor
                 </>
               }
-              background="#EAF8F3"
-              color="#007050"
+              background="rgba(16, 231, 157, 0.15)"
+              color="#10E79D"
               onClick={() =>
                 open("rank-predictor")
               }
@@ -371,8 +503,8 @@ export default function Dashboard({
                   Predictor
                 </>
               }
-              background="#EAF8F3"
-              color="#007050"
+              background="rgba(56, 189, 248, 0.15)"
+              color="#38BDF8"
               onClick={() =>
                 open("college-prediction")
               }
@@ -387,8 +519,8 @@ export default function Dashboard({
                   Counsellor
                 </>
               }
-              background="#F2EAFE"
-              color="#7652C8"
+              background="rgba(168, 85, 247, 0.15)"
+              color="#C084FC"
               onClick={() =>
                 open("ai-counsellor")
               }
@@ -425,24 +557,12 @@ export default function Dashboard({
                   <button
                     type="button"
                     key={subject.name}
-                    style={{
-                      ...styles.prepCard,
-                      background:
-                        subject.bg,
-                      borderColor:
-                        `${subject.color}20`,
-                    }}
+                    style={styles.prepCard}
                     onClick={() =>
                       open("analysis")
                     }
                   >
-                    <div
-                      style={{
-                        ...styles.prepIcon,
-                        color:
-                          subject.color,
-                      }}
-                    >
+                    <div style={styles.prepIcon}>
                       {subject.icon}
                     </div>
 
@@ -451,14 +571,14 @@ export default function Dashboard({
                     </div>
 
                     <div style={styles.prepValue}>
-                      {subject.value}%
+                      {subject.hasData ? `${subject.value}%` : "0%"}
                     </div>
 
                     <div
                       style={{
                         ...styles.prepStatus,
-                        color:
-                          subject.color,
+                        color: subject.statusColor,
+                        background: subject.statusBg,
                       }}
                     >
                       {subject.status}
@@ -620,54 +740,58 @@ const styles = {
     width: "100%",
     minHeight: "100vh",
     minHeight: "100dvh",
-    background: "#F4FBF7",
+    background: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
     display: "flex",
     justifyContent: "center",
     alignItems: "stretch",
     padding: 0,
     boxSizing: "border-box",
-    fontFamily:
-      "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    userSelect: "none",
   },
 
   phone: {
     width: "100%",
-    maxWidth: "390px",
+    maxWidth: "430px",
     height: "100vh",
     height: "100dvh",
     minHeight: 0,
-    background: "#FFFFFF",
+    background: "transparent",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
     boxSizing: "border-box",
+    position: "relative",
   },
 
   header: {
     height: "64px",
     minHeight: "64px",
-    padding: "0 16px",
+    padding: "0 18px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    background: "#FFFFFF",
-    borderBottom: "1px solid #EDF2F0",
+    background: "rgba(6, 49, 43, 0.82)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+    backdropFilter: "blur(16px)",
     flexShrink: 0,
+    zIndex: 10,
   },
 
   menuButton: {
-    width: "40px",
-    height: "40px",
-    border: 0,
+    width: "38px",
+    height: "38px",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
     borderRadius: "12px",
-    background: "#F4FBF7",
-    color: "#082F3C",
+    background: "rgba(255, 255, 255, 0.06)",
+    color: "#FFFFFF",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: "4px",
     cursor: "pointer",
+    backdropFilter: "blur(10px)",
   },
 
   menuLine: {
@@ -675,7 +799,7 @@ const styles = {
     width: "18px",
     height: "2px",
     borderRadius: "4px",
-    background: "#082F3C",
+    background: "#FFFFFF",
   },
 
   brand: {
@@ -686,33 +810,34 @@ const styles = {
   },
 
   brandTop: {
-    fontSize: "16px",
+    fontSize: "17px",
     fontWeight: 900,
-    color: "#082F3C",
-    letterSpacing: "-0.4px",
+    color: "#FFFFFF",
+    letterSpacing: "-0.3px",
   },
 
   brandBottom: {
-    marginTop: "4px",
-    fontSize: "7.5px",
-    fontWeight: 900,
-    letterSpacing: "1.7px",
-    color: "#007050",
+    marginTop: "3px",
+    fontSize: "8px",
+    fontWeight: 800,
+    letterSpacing: "1.8px",
+    color: "#10E79D",
   },
 
   avatar: {
-    width: "40px",
-    height: "40px",
-    border: 0,
+    width: "38px",
+    height: "38px",
+    border: "1.5px solid rgba(255, 255, 255, 0.2)",
     borderRadius: "50%",
-    background: "#007050",
-    color: "#FFFFFF",
+    background: "linear-gradient(135deg, #10E79D, #059669)",
+    color: "#022019",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "14px",
+    fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
+    boxShadow: "0 0 14px rgba(16, 231, 157, 0.4)",
   },
 
   content: {
@@ -720,9 +845,10 @@ const styles = {
     minHeight: 0,
     overflowY: "auto",
     overflowX: "hidden",
-    padding: "17px 15px 12px",
+    padding: "16px 16px 12px",
     boxSizing: "border-box",
     WebkitOverflowScrolling: "touch",
+    scrollbarWidth: "none",
   },
 
   greeting: {
@@ -730,7 +856,7 @@ const styles = {
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 16,
   },
 
   greetingText: {
@@ -739,168 +865,197 @@ const styles = {
   },
 
   welcome: {
-    fontSize: "8px",
-    fontWeight: 900,
+    fontSize: "9px",
+    fontWeight: 800,
     letterSpacing: "1px",
-    color: "#007050",
-    marginBottom: "5px",
+    color: "#6EE7B7",
+    marginBottom: "4px",
+    textTransform: "uppercase",
   },
 
   greetingTitle: {
     margin: 0,
-    fontSize: "21px",
+    fontSize: "20px",
     lineHeight: 1.2,
     fontWeight: 900,
-    color: "#082F3C",
-    letterSpacing: "-0.5px",
+    color: "#FFFFFF",
+    letterSpacing: "-0.4px",
   },
 
-  greetingExam: {
-    marginTop: "6px",
+  /* ACTIVE EXAM PILL */
+  activeExamPill: {
+    marginTop: "8px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "7px",
+    padding: "6px 14px 6px 10px",
+    borderRadius: "12px",
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    border: "1px solid rgba(52, 211, 153, 0.35)",
+    color: "#6EE7B7",
     fontSize: "12px",
     fontWeight: 800,
-    color: "#007050",
+    cursor: "pointer",
+    boxSizing: "border-box",
+    backdropFilter: "blur(10px)",
+    transition: "background 0.15s ease",
+  },
+
+  activeExamDot: {
+    width: "7px",
+    height: "7px",
+    borderRadius: "50%",
+    backgroundColor: "#10E79D",
+    boxShadow: "0 0 8px #10E79D",
+    flexShrink: 0,
   },
 
   bellButton: {
-    width: 40,
-    height: 40,
-    border: "1px solid #E8EFEC",
+    width: 38,
+    height: 38,
+    border: "1px solid rgba(255, 255, 255, 0.12)",
     borderRadius: 12,
-    background: "#FFFFFF",
-    color: "#007050",
+    background: "rgba(255, 255, 255, 0.06)",
+    color: "#34D399",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
     flexShrink: 0,
+    backdropFilter: "blur(10px)",
   },
 
   testCard: {
     position: "relative",
     overflow: "hidden",
     width: "100%",
-    border: 0,
+    border: "1px solid rgba(52, 211, 153, 0.35)",
     borderRadius: "20px",
-    background:
-      "linear-gradient(135deg, #008C67 0%, #007050 100%)",
+    background: "linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.65) 100%)",
     color: "#FFFFFF",
     padding: "18px",
     boxSizing: "border-box",
     textAlign: "left",
-    boxShadow:
-      "0 10px 24px rgba(0,112,80,0.19)",
-    marginBottom: 13,
+    boxShadow: "0 14px 32px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)",
+    backdropFilter: "blur(16px)",
+    marginBottom: 16,
   },
 
   testDecorOne: {
     position: "absolute",
-    width: 120,
-    height: 120,
+    width: 140,
+    height: 140,
     borderRadius: "50%",
-    right: -55,
-    top: -65,
-    background:
-      "rgba(255,255,255,0.07)",
+    right: -40,
+    top: -50,
+    background: "radial-gradient(circle, rgba(16, 231, 157, 0.2) 0%, transparent 70%)",
+    pointerEvents: "none",
   },
 
   testDecorTwo: {
     position: "absolute",
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     borderRadius: "50%",
-    right: 34,
-    bottom: -50,
-    background:
-      "rgba(255,255,255,0.045)",
+    right: 40,
+    bottom: -40,
+    background: "radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, transparent 70%)",
+    pointerEvents: "none",
   },
 
   testTitleRow: {
     display: "flex",
     alignItems: "center",
-    gap: 11,
+    gap: 12,
     position: "relative",
     zIndex: 1,
   },
 
   testIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    background:
-      "rgba(255,255,255,0.15)",
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    background: "rgba(255, 255, 255, 0.12)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    boxShadow: "inset 0 1px 2px rgba(255, 255, 255, 0.25)",
   },
 
   testTitle: {
     fontSize: "20px",
-    lineHeight: 1.1,
+    lineHeight: 1.15,
     fontWeight: 900,
+    color: "#FFFFFF",
   },
 
   testSubtitle: {
     marginTop: "4px",
-    fontSize: "10px",
-    fontWeight: 650,
-    opacity: 0.86,
+    fontSize: "11px",
+    fontWeight: 600,
+    color: "rgba(226, 232, 240, 0.8)",
   },
 
   startButton: {
     position: "relative",
     zIndex: 2,
     marginTop: 15,
-    marginLeft: 54,
+    marginLeft: 56,
     height: 38,
-    padding: "0 19px",
+    padding: "0 22px",
     border: 0,
-    borderRadius: 11,
-    background: "#FFFFFF",
-    color: "#007050",
-    fontSize: "11.5px",
+    borderRadius: 12,
+    background: "linear-gradient(135deg, #10E79D 0%, #059669 100%)",
+    color: "#022019",
+    fontSize: "12px",
     fontWeight: 900,
     cursor: "pointer",
+    boxShadow: "0 6px 18px rgba(16, 231, 157, 0.35)",
   },
 
   quickGrid: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(3, minmax(0, 1fr))",
-    gap: 8,
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 10,
     marginBottom: 20,
   },
 
   quickCard: {
     minWidth: 0,
-    minHeight: 88,
-    border: "1px solid #E9EFED",
-    borderRadius: 15,
-    background: "#FFFFFF",
-    padding: "10px 5px",
+    minHeight: 92,
+    border: "1px solid rgba(255, 255, 255, 0.09)",
+    borderRadius: 16,
+    background: "rgba(255, 255, 255, 0.045)",
+    padding: "12px 6px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 7,
+    gap: 8,
     cursor: "pointer",
+    backdropFilter: "blur(12px)",
+    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
+    transition: "transform 0.2s ease, background 0.2s ease",
   },
 
   quickIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    boxShadow: "inset 0 1px 2px rgba(255, 255, 255, 0.2)",
   },
 
   quickTitle: {
-    color: "#183848",
-    fontSize: "9.5px",
-    lineHeight: 1.15,
-    fontWeight: 850,
+    color: "#FFFFFF",
+    fontSize: "10.5px",
+    lineHeight: 1.2,
+    fontWeight: 800,
     textAlign: "center",
   },
 
@@ -909,113 +1064,124 @@ const styles = {
     alignItems: "flex-end",
     justifyContent: "space-between",
     gap: 8,
-    marginBottom: 9,
+    marginBottom: 11,
   },
 
   sectionKicker: {
-    fontSize: "7.5px",
-    fontWeight: 900,
+    fontSize: "8.5px",
+    fontWeight: 800,
     letterSpacing: "1px",
-    color: "#007050",
+    color: "#6EE7B7",
     marginBottom: 3,
+    textTransform: "uppercase",
   },
 
   sectionTitle: {
     margin: 0,
-    fontSize: "17px",
+    fontSize: "18px",
     lineHeight: 1.2,
     fontWeight: 900,
-    color: "#082F3C",
+    color: "#FFFFFF",
     letterSpacing: "-0.3px",
   },
 
   viewButton: {
     border: 0,
     background: "transparent",
-    color: "#007050",
-    padding: "5px 2px",
-    fontSize: "9px",
-    fontWeight: 900,
+    color: "#10E79D",
+    padding: "4px 2px",
+    fontSize: "11px",
+    fontWeight: 800,
     cursor: "pointer",
   },
 
   preparationGrid: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(3, minmax(0, 1fr))",
-    gap: 7,
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 8,
     marginBottom: 20,
   },
 
   prepCard: {
     minWidth: 0,
     minHeight: 132,
-    border: "1px solid",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
     borderRadius: 16,
-    padding: "11px 6px",
+    background: "rgba(255, 255, 255, 0.05)",
+    padding: "14px 8px 12px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
+    backdropFilter: "blur(12px)",
+    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
+    transition: "transform 0.2s ease, background 0.2s ease",
   },
 
   prepIcon: {
-    width: 35,
-    height: 35,
-    borderRadius: "50%",
-    background: "#FFFFFF",
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "16px",
+    fontSize: "17px",
     fontWeight: 900,
-    marginBottom: 7,
+    marginBottom: 8,
+    color: "#10E79D",
   },
 
   prepName: {
-    color: "#213B45",
-    fontSize: "9.5px",
+    color: "#FFFFFF",
+    fontSize: "11px",
     lineHeight: 1.15,
-    fontWeight: 850,
+    fontWeight: 800,
     textAlign: "center",
   },
 
   prepValue: {
-    marginTop: 5,
-    color: "#082F3C",
-    fontSize: "16px",
+    marginTop: 6,
+    color: "#10E79D",
+    fontSize: "19px",
     lineHeight: 1,
     fontWeight: 900,
   },
 
   prepStatus: {
-    marginTop: 5,
-    fontSize: "7.5px",
-    lineHeight: 1.1,
-    fontWeight: 850,
+    marginTop: 6,
+    fontSize: "9px",
+    lineHeight: 1,
+    fontWeight: 800,
     textAlign: "center",
+    padding: "3px 8px",
+    borderRadius: "6px",
   },
 
   upcomingCard: {
     width: "100%",
     minHeight: 64,
-    border: "1px solid #E7EEEB",
-    borderRadius: 15,
-    background: "#FFFFFF",
-    padding: 10,
+    border: "1px solid rgba(255, 255, 255, 0.09)",
+    borderRadius: 16,
+    background: "rgba(255, 255, 255, 0.045)",
+    padding: 12,
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     boxSizing: "border-box",
+    backdropFilter: "blur(12px)",
+    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
   },
 
   upcomingIcon: {
-    width: 39,
-    height: 39,
-    borderRadius: 11,
-    background: "#EEF7FF",
-    color: "#3679C9",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(56, 189, 248, 0.15)",
+    border: "1px solid rgba(56, 189, 248, 0.3)",
+    color: "#38BDF8",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1029,44 +1195,45 @@ const styles = {
 
   upcomingName: {
     display: "block",
-    color: "#173747",
-    fontSize: "11px",
-    lineHeight: 1.2,
-    fontWeight: 850,
+    color: "#FFFFFF",
+    fontSize: "13px",
+    lineHeight: 1.25,
+    fontWeight: 800,
   },
 
   upcomingMeta: {
     display: "block",
     marginTop: 4,
-    color: "#7A898E",
-    fontSize: "8.5px",
+    color: "rgba(226, 232, 240, 0.6)",
+    fontSize: "10.5px",
   },
 
   upcomingStart: {
-    height: 33,
-    padding: "0 13px",
+    height: 34,
+    padding: "0 16px",
     border: 0,
     borderRadius: 10,
-    background: "#007050",
-    color: "#FFFFFF",
-    fontSize: "9.5px",
+    background: "linear-gradient(135deg, #10E79D, #059669)",
+    color: "#022019",
+    fontSize: "11px",
     fontWeight: 900,
     cursor: "pointer",
     flexShrink: 0,
+    boxShadow: "0 4px 12px rgba(16, 231, 157, 0.3)",
   },
 
   bottomSpace: {
-    height: 8,
+    height: 12,
   },
 
   bottomNav: {
     height: 68,
     minHeight: 68,
-    borderTop: "1px solid #E7EEEB",
-    background: "#FFFFFF",
+    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+    background: "rgba(3, 29, 27, 0.92)",
+    backdropFilter: "blur(18px)",
     display: "grid",
-    gridTemplateColumns:
-      "repeat(5, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
     padding: "4px 3px 5px",
     boxSizing: "border-box",
     flexShrink: 0,
@@ -1077,20 +1244,21 @@ const styles = {
     minWidth: 0,
     border: 0,
     background: "transparent",
-    color: "#8A9699",
+    color: "rgba(226, 232, 240, 0.5)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
     cursor: "pointer",
-    fontSize: "8px",
+    fontSize: "9px",
     fontWeight: 750,
     padding: "3px 0",
+    transition: "color 0.2s ease",
   },
 
   navActive: {
-    color: "#007050",
+    color: "#10E79D",
     fontWeight: 900,
   },
 

@@ -8,11 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "seed:colleges": "node scripts/seed-colleges.js",
+    "test:whatsapp": "node scripts/test-whatsapp.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
+    "google-auth-library": "^11.1.0",
     "mongoose": "^9.9.5",
     "next": "16.3.4",
     "react": "19.2.8",

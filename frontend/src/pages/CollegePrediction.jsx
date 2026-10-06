@@ -1,124 +1,41 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Capacitor, CapacitorHttp } from "@capacitor/core";
+import { realColleges } from "../data/colleges";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3000";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  blue: "#3679C9",
-  purple: "#7652C8",
-  yellow: "#C78A13",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "rgba(16, 185, 129, 0.12)",
+  softMint: "rgba(255, 255, 255, 0.05)",
+  white: "rgba(255, 255, 255, 0.06)",
+  muted: "rgba(226, 232, 240, 0.7)",
+  border: "rgba(255, 255, 255, 0.1)",
+  blue: "#38BDF8",
+  purple: "#A855F7",
+  yellow: "#F59E0B",
 };
 
 const exams = [
-  { id: "neet", label: "NEET UG", sub: "Medical" },
-  { id: "jee", label: "JEE Main", sub: "Engineering" },
-  { id: "cuet", label: "CUET UG", sub: "Universities" },
+  {
+    id: "neet",
+    label: "NEET UG",
+    sub: "Medical",
+  },
+  {
+    id: "jee",
+    label: "JEE Main",
+    sub: "Engineering",
+  },
+  {
+    id: "cuet",
+    label: "CUET UG",
+    sub: "Universities",
+  },
 ];
-
-const colleges = {
-  neet: [
-    {
-      name: "Government Medical College",
-      location: "Srinagar, Jammu & Kashmir",
-      type: "Government",
-      match: "High Match",
-      cutoff: "620+",
-      rank: "1,250 – 4,800",
-      icon: "M",
-    },
-    {
-      name: "Government Medical College",
-      location: "Jammu, Jammu & Kashmir",
-      type: "Government",
-      match: "High Match",
-      cutoff: "615+",
-      rank: "2,100 – 6,200",
-      icon: "M",
-    },
-    {
-      name: "SKIMS Medical College",
-      location: "Srinagar, Jammu & Kashmir",
-      type: "Government",
-      match: "Good Match",
-      cutoff: "600+",
-      rank: "4,200 – 9,500",
-      icon: "S",
-    },
-    {
-      name: "AIIMS Jammu",
-      location: "Jammu, Jammu & Kashmir",
-      type: "Central",
-      match: "Good Match",
-      cutoff: "590+",
-      rank: "5,500 – 12,000",
-      icon: "A",
-    },
-  ],
-
-  jee: [
-    {
-      name: "National Institute of Technology",
-      location: "Srinagar, Jammu & Kashmir",
-      type: "NIT",
-      match: "High Match",
-      cutoff: "95+ Percentile",
-      rank: "12,000 – 32,000",
-      icon: "N",
-    },
-    {
-      name: "IIT Jammu",
-      location: "Jammu, Jammu & Kashmir",
-      type: "IIT",
-      match: "Good Match",
-      cutoff: "98+ Percentile",
-      rank: "5,000 – 18,000",
-      icon: "I",
-    },
-    {
-      name: "IIIT Delhi",
-      location: "Delhi",
-      type: "IIIT",
-      match: "Good Match",
-      cutoff: "97+ Percentile",
-      rank: "7,000 – 20,000",
-      icon: "D",
-    },
-  ],
-
-  cuet: [
-    {
-      name: "University of Delhi",
-      location: "Delhi",
-      type: "Central University",
-      match: "High Match",
-      cutoff: "780+",
-      rank: "1,000 – 8,000",
-      icon: "D",
-    },
-    {
-      name: "Jawaharlal Nehru University",
-      location: "New Delhi",
-      type: "Central University",
-      match: "Good Match",
-      cutoff: "750+",
-      rank: "3,000 – 12,000",
-      icon: "J",
-    },
-    {
-      name: "Banaras Hindu University",
-      location: "Varanasi",
-      type: "Central University",
-      match: "Good Match",
-      cutoff: "730+",
-      rank: "5,000 – 18,000",
-      icon: "B",
-    },
-  ],
-};
 
 function Icon({
   name,
@@ -252,6 +169,7 @@ function Icon({
 
 export default function CollegePredictor({
   onBack,
+  profile,
 }) {
   const [selectedExam, setSelectedExam] =
     useState("neet");
@@ -271,12 +189,20 @@ export default function CollegePredictor({
   const [selectedCollege, setSelectedCollege] =
     useState(null);
 
+  const [results, setResults] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
   const [saved, setSaved] =
     useState([]);
 
-  const results = useMemo(() => {
-    return colleges[selectedExam] || [];
-  }, [selectedExam]);
+  const [saveLoading, setSaveLoading] =
+    useState(false);
 
   const selectedExamData =
     exams.find(
@@ -284,31 +210,582 @@ export default function CollegePredictor({
         exam.id === selectedExam
     );
 
-  const predict = () => {
-    const cleanScore = score.trim();
+  const userId = String(
+    profile?.id ||
+      profile?._id ||
+      profile?.userId ||
+      ""
+  ).trim();
 
-    if (!cleanScore) {
-      return;
+  const getCollegeId = (
+    college
+  ) => {
+    return String(
+      college?.id ||
+        college?._id ||
+        ""
+    ).trim();
+  };
+
+  const formatRange = (
+    min,
+    max,
+    fallback = "—"
+  ) => {
+    const minValue = Number(min);
+    const maxValue = Number(max);
+
+    if (
+      Number.isFinite(minValue) &&
+      Number.isFinite(maxValue)
+    ) {
+      return `${minValue.toLocaleString(
+        "en-IN"
+      )} – ${maxValue.toLocaleString(
+        "en-IN"
+      )}`;
     }
 
-    setStage("results");
+    if (
+      Number.isFinite(minValue)
+    ) {
+      return `${minValue.toLocaleString(
+        "en-IN"
+      )}+`;
+    }
+
+    return fallback;
   };
 
-  const saveCollege = (
-    collegeName
+  const getCutoffDisplay = (
+    college
   ) => {
-    setSaved((prev) =>
-      prev.includes(collegeName)
-        ? prev.filter(
-            (name) =>
-              name !== collegeName
-          )
-        : [
-            ...prev,
-            collegeName,
-          ]
+    return (
+      college?.cutoff ||
+      college?.expectedCutoff ||
+      formatRange(
+        college?.cutoffMin,
+        college?.cutoffMax
+      )
     );
   };
+
+  const getRankDisplay = (
+    college
+  ) => {
+    return (
+      college?.rank ||
+      college?.expectedRank ||
+      formatRange(
+        college?.rankMin,
+        college?.rankMax
+      )
+    );
+  };
+
+  const getIconLetter = (
+    college
+  ) => {
+    const icon = String(
+      college?.icon || ""
+    ).trim();
+
+    if (!icon) {
+      return String(
+        college?.name || "C"
+      )
+        .charAt(0)
+        .toUpperCase();
+    }
+
+    const iconMap = {
+      medical: "M",
+      engineering: "E",
+      university: "U",
+      college: "C",
+    };
+
+    return (
+      iconMap[icon.toLowerCase()] ||
+      icon
+        .charAt(0)
+        .toUpperCase()
+    );
+  };
+
+  /* =========================================================
+     LOAD SAVED COLLEGES
+  ========================================================= */
+
+  const loadSavedColleges =
+    async () => {
+      if (!userId) {
+        setSaved([]);
+        return;
+      }
+
+      try {
+        const url =
+          `${API_URL}/api/saved-colleges` +
+          `?userId=${encodeURIComponent(
+            userId
+          )}`;
+
+        let data = {};
+
+        if (
+          Capacitor.getPlatform() ===
+          "web"
+        ) {
+          const response =
+            await fetch(url);
+
+          data =
+            await response
+              .json()
+              .catch(() => ({}));
+
+          if (
+            !response.ok ||
+            !data?.success
+          ) {
+            throw new Error(
+              data?.message ||
+                "Unable to load saved colleges."
+            );
+          }
+        } else {
+          const response =
+            await CapacitorHttp.get({
+              url,
+            });
+
+          data =
+            response?.data || {};
+
+          if (
+            response?.status <
+              200 ||
+            response?.status >=
+              300 ||
+            !data?.success
+          ) {
+            throw new Error(
+              data?.message ||
+                "Unable to load saved colleges."
+            );
+          }
+        }
+
+        const savedIds =
+          Array.isArray(
+            data?.colleges
+          )
+            ? data.colleges
+                .map(
+                  (college) =>
+                    getCollegeId(
+                      college
+                    )
+                )
+                .filter(Boolean)
+            : [];
+
+        setSaved(savedIds);
+      } catch (
+        loadError
+      ) {
+        console.error(
+          "Load saved colleges error:",
+          loadError
+        );
+      }
+    };
+
+  useEffect(() => {
+    loadSavedColleges();
+  }, [userId]);
+
+  /* =========================================================
+     PREDICT
+  ========================================================= */
+
+  const predict =
+    async () => {
+      const cleanScore =
+        score.trim();
+
+      const numericScore =
+        Number(cleanScore);
+
+      if (
+        !cleanScore ||
+        !Number.isFinite(
+          numericScore
+        ) ||
+        numericScore < 0
+      ) {
+        setError(
+          "Please enter a valid score."
+        );
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+      setResults([]);
+      setSelectedCollege(null);
+
+      try {
+        const params =
+          new URLSearchParams({
+            exam: selectedExam,
+            score: String(
+              numericScore
+            ),
+            category,
+            state,
+          });
+
+        const url =
+          `${API_URL}/api/colleges?` +
+          params.toString();
+
+        let data = {};
+
+        if (
+          Capacitor.getPlatform() ===
+          "web"
+        ) {
+          const response =
+            await fetch(url);
+
+          data =
+            await response
+              .json()
+              .catch(() => ({}));
+
+          if (
+            !response.ok ||
+            !data?.success
+          ) {
+            throw new Error(
+              data?.message ||
+                "Unable to calculate college predictions."
+            );
+          }
+        } else {
+          const response =
+            await CapacitorHttp.get({
+              url,
+            });
+
+          data =
+            response?.data || {};
+
+          if (
+            response?.status <
+              200 ||
+            response?.status >=
+              300 ||
+            !data?.success
+          ) {
+            throw new Error(
+              data?.message ||
+                "Unable to calculate college predictions."
+            );
+          }
+        }
+
+        const normalized =
+          Array.isArray(
+            data?.colleges
+          )
+            ? data.colleges.map(
+                (college) => ({
+                  ...college,
+                  id: getCollegeId(
+                    college
+                  ),
+                })
+              )
+            : [];
+
+        if (normalized.length > 0) {
+          setResults(normalized);
+        } else {
+          // Fallback to real verified dataset if backend returned empty
+          const fallbackMatches = realColleges
+            .filter((c) => c.exam === selectedExam || (selectedExam === "jee" && c.exam === "jee"))
+            .map((c) => ({
+              ...c,
+              match: numericScore >= c.cutoffMax ? "High Match" : numericScore >= c.cutoffMin ? "Good Match" : "Below Current Range",
+            }));
+          setResults(fallbackMatches);
+        }
+
+        setStage(
+          "results"
+        );
+      } catch (
+        predictError
+      ) {
+        console.warn(
+          "Using verified local real colleges dataset due to network/API error:",
+          predictError
+        );
+
+        const fallbackMatches = realColleges
+          .filter((c) => c.exam === selectedExam || (selectedExam === "jee" && c.exam === "jee"))
+          .map((c) => ({
+            ...c,
+            match: numericScore >= c.cutoffMax ? "High Match" : numericScore >= c.cutoffMin ? "Good Match" : "Below Current Range",
+          }));
+
+        if (fallbackMatches.length > 0) {
+          setResults(fallbackMatches);
+          setStage("results");
+          setError("");
+        } else {
+          setError(
+            predictError?.message ||
+              "Unable to load college predictions."
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  /* =========================================================
+     SAVE / REMOVE COLLEGE
+  ========================================================= */
+
+  const saveCollege =
+    async (
+      college
+    ) => {
+      const collegeId =
+        getCollegeId(
+          college
+        );
+
+      if (!userId) {
+        alert(
+          "Please login first."
+        );
+        return;
+      }
+
+      if (!collegeId) {
+        alert(
+          "College ID is missing."
+        );
+        return;
+      }
+
+      const alreadySaved =
+        saved.includes(
+          collegeId
+        );
+
+      setSaveLoading(
+        true
+      );
+
+      try {
+        const url =
+          `${API_URL}/api/saved-colleges`;
+
+        let data = {};
+
+        /* =========================
+           REMOVE
+        ========================= */
+
+        if (alreadySaved) {
+          const deleteUrl =
+            `${url}?userId=${encodeURIComponent(
+              userId
+            )}` +
+            `&collegeId=${encodeURIComponent(
+              collegeId
+            )}`;
+
+          if (
+            Capacitor.getPlatform() ===
+            "web"
+          ) {
+            const response =
+              await fetch(
+                deleteUrl,
+                {
+                  method:
+                    "DELETE",
+                }
+              );
+
+            data =
+              await response
+                .json()
+                .catch(
+                  () => ({})
+                );
+
+            if (
+              !response.ok ||
+              !data?.success
+            ) {
+              throw new Error(
+                data?.message ||
+                  "Unable to remove college."
+              );
+            }
+          } else {
+            const response =
+              await CapacitorHttp.delete(
+                {
+                  url:
+                    deleteUrl,
+                }
+              );
+
+            data =
+              response?.data ||
+              {};
+
+            if (
+              response?.status <
+                200 ||
+              response?.status >=
+                300 ||
+              !data?.success
+            ) {
+              throw new Error(
+                data?.message ||
+                  "Unable to remove college."
+              );
+            }
+          }
+
+          setSaved(
+            (previous) =>
+              previous.filter(
+                (id) =>
+                  id !==
+                  collegeId
+              )
+          );
+
+          return;
+        }
+
+        /* =========================
+           SAVE
+        ========================= */
+
+        const payload = {
+          userId,
+          collegeId,
+        };
+
+        if (
+          Capacitor.getPlatform() ===
+          "web"
+        ) {
+          const response =
+            await fetch(
+              url,
+              {
+                method:
+                  "POST",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+                body:
+                  JSON.stringify(
+                    payload
+                  ),
+              }
+            );
+
+          data =
+            await response
+              .json()
+              .catch(
+                () => ({})
+              );
+
+          if (
+            !response.ok ||
+            !data?.success
+          ) {
+            throw new Error(
+              data?.message ||
+                "Unable to save college."
+            );
+          }
+        } else {
+          const response =
+            await CapacitorHttp.post(
+              {
+                url,
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+                data: payload,
+              }
+            );
+
+          data =
+            response?.data ||
+            {};
+
+          if (
+            response?.status <
+              200 ||
+            response?.status >=
+              300 ||
+            !data?.success
+          ) {
+            throw new Error(
+              data?.message ||
+                "Unable to save college."
+            );
+          }
+        }
+
+        setSaved(
+          (previous) =>
+            previous.includes(
+              collegeId
+            )
+              ? previous
+              : [
+                  ...previous,
+                  collegeId,
+                ]
+        );
+      } catch (
+        saveError
+      ) {
+        console.error(
+          "Save college error:",
+          saveError
+        );
+
+        alert(
+          saveError?.message ||
+            "Unable to update saved college."
+        );
+      } finally {
+        setSaveLoading(
+          false
+        );
+      }
+    };
 
   /* =========================================================
      COLLEGE DETAILS
@@ -318,17 +795,37 @@ export default function CollegePredictor({
     stage === "details" &&
     selectedCollege
   ) {
+    const selectedCollegeId =
+      getCollegeId(
+        selectedCollege
+      );
+
+    const isSaved =
+      saved.includes(
+        selectedCollegeId
+      );
+
     return (
       <Page>
         <Header
           onBack={() =>
-            setStage("results")
+            setStage(
+              "results"
+            )
           }
           right="College Details"
         />
 
-        <main style={styles.container}>
-          <div style={styles.breadcrumb}>
+        <main
+          style={
+            styles.container
+          }
+        >
+          <div
+            style={
+              styles.breadcrumb
+            }
+          >
             <span>
               College Predictor
             </span>
@@ -350,7 +847,9 @@ export default function CollegePredictor({
                 styles.detailIcon
               }
             >
-              {selectedCollege.icon}
+              {getIconLetter(
+                selectedCollege
+              )}
             </div>
 
             <div
@@ -364,7 +863,9 @@ export default function CollegePredictor({
                   styles.detailType
                 }
               >
-                {selectedCollege.type}
+                {
+                  selectedCollege.type
+                }
               </div>
 
               <h1
@@ -372,7 +873,9 @@ export default function CollegePredictor({
                   styles.detailTitle
                 }
               >
-                {selectedCollege.name}
+                {
+                  selectedCollege.name
+                }
               </h1>
 
               <div
@@ -383,10 +886,14 @@ export default function CollegePredictor({
                 <Icon
                   name="location"
                   size={14}
-                  stroke={C.green}
+                  stroke={
+                    C.green
+                  }
                 />
 
-                {selectedCollege.location}
+                {
+                  selectedCollege.location
+                }
               </div>
             </div>
           </section>
@@ -399,28 +906,31 @@ export default function CollegePredictor({
             <DetailMetric
               label="Your Match"
               value={
-                selectedCollege.match
+                selectedCollege.match ||
+                "—"
               }
               green
             />
 
             <DetailMetric
               label="Expected Cutoff"
-              value={
-                selectedCollege.cutoff
-              }
+              value={getCutoffDisplay(
+                selectedCollege
+              )}
             />
 
             <DetailMetric
               label="Expected Rank"
-              value={
-                selectedCollege.rank
-              }
+              value={getRankDisplay(
+                selectedCollege
+              )}
             />
           </div>
 
           <section
-            style={styles.panel}
+            style={
+              styles.panel
+            }
           >
             <div
               style={
@@ -443,7 +953,9 @@ export default function CollegePredictor({
                 <Icon
                   name="target"
                   size={17}
-                  stroke={C.green}
+                  stroke={
+                    C.green
+                  }
                 />
               </div>
 
@@ -453,7 +965,8 @@ export default function CollegePredictor({
                     styles.reasonTitle
                   }
                 >
-                  Strong admission possibility
+                  Strong admission
+                  possibility
                 </div>
 
                 <div
@@ -461,9 +974,11 @@ export default function CollegePredictor({
                     styles.reasonText
                   }
                 >
-                  Your predicted performance
-                  falls within the expected
-                  range for this college.
+                  Your predicted
+                  performance falls
+                  within the expected
+                  range for this
+                  college.
                 </div>
               </div>
             </div>
@@ -481,7 +996,9 @@ export default function CollegePredictor({
                 <Icon
                   name="location"
                   size={17}
-                  stroke={C.green}
+                  stroke={
+                    C.green
+                  }
                 />
               </div>
 
@@ -499,8 +1016,9 @@ export default function CollegePredictor({
                     styles.reasonText
                   }
                 >
-                  This college matches your
-                  selected state/location
+                  This college matches
+                  your selected
+                  state/location
                   preference.
                 </div>
               </div>
@@ -521,7 +1039,9 @@ export default function CollegePredictor({
                 <Icon
                   name="trophy"
                   size={17}
-                  stroke={C.green}
+                  stroke={
+                    C.green
+                  }
                 />
               </div>
 
@@ -539,9 +1059,10 @@ export default function CollegePredictor({
                     styles.reasonText
                   }
                 >
-                  Keep improving your score
-                  to increase the number of
-                  available choices.
+                  Keep improving your
+                  score to increase the
+                  number of available
+                  choices.
                 </div>
               </div>
             </div>
@@ -555,26 +1076,37 @@ export default function CollegePredictor({
             <Icon
               name="info"
               size={16}
-              stroke={C.muted}
+              stroke={
+                C.muted
+              }
             />
 
             <span>
-              College predictions are estimates
-              based on previous trends and may
-              change with actual cutoffs,
-              category and counselling rounds.
+              College predictions
+              are estimates based on
+              previous trends and may
+              change with actual
+              cutoffs, category and
+              counselling rounds.
             </span>
           </div>
 
           <button
             type="button"
-            style={
-              styles.primaryButton
-            }
+            style={{
+              ...styles.primaryButton,
+              opacity:
+                saveLoading
+                  ? 0.7
+                  : 1,
+            }}
             onClick={() =>
               saveCollege(
-                selectedCollege.name
+                selectedCollege
               )
+            }
+            disabled={
+              saveLoading
             }
           >
             <Icon
@@ -583,10 +1115,10 @@ export default function CollegePredictor({
               stroke="#FFFFFF"
             />
 
-            {saved.includes(
-              selectedCollege.name
-            )
+            {isSaved
               ? "Saved to My Colleges"
+              : saveLoading
+              ? "Saving..."
               : "Save College"}
           </button>
         </main>
@@ -598,17 +1130,25 @@ export default function CollegePredictor({
      RESULTS
   ========================================================= */
 
-  if (stage === "results") {
+  if (
+    stage === "results"
+  ) {
     return (
       <Page>
         <Header
           onBack={() =>
-            setStage("form")
+            setStage(
+              "form"
+            )
           }
           right="Predicted Colleges"
         />
 
-        <main style={styles.container}>
+        <main
+          style={
+            styles.container
+          }
+        >
           <div
             style={
               styles.resultTop
@@ -628,9 +1168,12 @@ export default function CollegePredictor({
               </div>
 
               <h1
-                style={styles.title}
+                style={
+                  styles.title
+                }
               >
-                Colleges You Can Target
+                Colleges You Can
+                Target
               </h1>
 
               <p
@@ -639,8 +1182,11 @@ export default function CollegePredictor({
                 }
               >
                 Based on your{" "}
-                {selectedExamData?.label}{" "}
-                score, category and location
+                {
+                  selectedExamData?.label
+                }{" "}
+                score, category
+                and location
                 preference.
               </p>
             </div>
@@ -651,7 +1197,9 @@ export default function CollegePredictor({
                 styles.editPrediction
               }
               onClick={() =>
-                setStage("form")
+                setStage(
+                  "form"
+                )
               }
             >
               Edit
@@ -671,7 +1219,9 @@ export default function CollegePredictor({
               <Icon
                 name="target"
                 size={21}
-                stroke={C.green}
+                stroke={
+                  C.green
+                }
               />
             </div>
 
@@ -686,7 +1236,7 @@ export default function CollegePredictor({
                   styles.summaryLabel
                 }
               >
-                YOUR PREDICTED RANGE
+                YOUR EXPECTED SCORE
               </div>
 
               <div
@@ -694,7 +1244,11 @@ export default function CollegePredictor({
                   styles.summaryValue
                 }
               >
-                1,250 – 8,500
+                {Number(
+                  score
+                ).toLocaleString(
+                  "en-IN"
+                )}
               </div>
 
               <div
@@ -702,8 +1256,8 @@ export default function CollegePredictor({
                   styles.summaryHint
                 }
               >
-                Estimated based on your
-                current score
+                Current expected
+                performance
               </div>
             </div>
 
@@ -730,7 +1284,9 @@ export default function CollegePredictor({
                 styles.resultFilterPill
               }
             >
-              {selectedExamData?.label}
+              {
+                selectedExamData?.label
+              }
             </span>
 
             <span
@@ -754,7 +1310,13 @@ export default function CollegePredictor({
                 styles.resultCount
               }
             >
-              {results.length} matches
+              {results.length}{" "}
+              {
+                results.length ===
+                1
+                  ? "match"
+                  : "matches"
+              }
             </span>
           </div>
 
@@ -777,8 +1339,8 @@ export default function CollegePredictor({
                   styles.sectionSubtitle
                 }
               >
-                Ranked by your admission
-                probability
+                Based on your
+                selected preferences
               </p>
             </div>
 
@@ -787,155 +1349,320 @@ export default function CollegePredictor({
               style={
                 styles.filterButton
               }
-              onClick={() => {}}
+              onClick={() =>
+                setStage(
+                  "form"
+                )
+              }
             >
               <Icon
                 name="filter"
                 size={16}
-                stroke={C.navy}
+                stroke={
+                  C.navy
+                }
               />
 
               Filter
             </button>
           </div>
 
-          {results.map(
-            (college) => (
-              <button
-                type="button"
-                key={
-                  college.name +
-                  college.location
-                }
+          {loading && (
+            <section
+              style={
+                styles.stateCard
+              }
+            >
+              <div
                 style={
-                  styles.collegeCard
+                  styles.stateTitle
                 }
-                onClick={() => {
-                  setSelectedCollege(
-                    college
-                  );
-                  setStage(
-                    "details"
-                  );
-                }}
+              >
+                Finding colleges...
+              </div>
+
+              <div
+                style={
+                  styles.stateText
+                }
+              >
+                Comparing your
+                score with the
+                current published
+                prediction data.
+              </div>
+            </section>
+          )}
+
+          {!loading &&
+            error && (
+              <section
+                style={
+                  styles.stateCard
+                }
               >
                 <div
                   style={
-                    styles.collegeLogo
+                    styles.stateTitle
                   }
                 >
-                  {college.icon}
+                  Unable to load
+                  predictions
                 </div>
 
                 <div
                   style={
-                    styles.collegeBody
+                    styles.stateText
                   }
                 >
-                  <div
-                    style={
-                      styles.collegeTop
+                  {error}
+                </div>
+
+                <button
+                  type="button"
+                  style={
+                    styles.retryButton
+                  }
+                  onClick={() =>
+                    setStage(
+                      "form"
+                    )
+                  }
+                >
+                  Edit prediction
+                </button>
+              </section>
+            )}
+
+          {!loading &&
+            !error &&
+            results.length ===
+              0 && (
+              <section
+                style={
+                  styles.stateCard
+                }
+              >
+                <div
+                  style={
+                    styles.stateTitle
+                  }
+                >
+                  No matching
+                  colleges found
+                </div>
+
+                <div
+                  style={
+                    styles.stateText
+                  }
+                >
+                  Try adjusting your
+                  score, category or
+                  preferred state.
+                </div>
+              </section>
+            )}
+
+          {!loading &&
+            !error &&
+            results.map(
+              (
+                college
+              ) => {
+                const collegeId =
+                  getCollegeId(
+                    college
+                  );
+
+                const isCollegeSaved =
+                  saved.includes(
+                    collegeId
+                  );
+
+                const match =
+                  String(
+                    college.match ||
+                      ""
+                  );
+
+                const isHighMatch =
+                  match.toLowerCase() ===
+                  "high match";
+
+                return (
+                  <button
+                    type="button"
+                    key={
+                      collegeId ||
+                      `${college.name}-${college.location}`
                     }
+                    style={
+                      styles.collegeCard
+                    }
+                    onClick={() => {
+                      setSelectedCollege(
+                        college
+                      );
+
+                      setStage(
+                        "details"
+                      );
+                    }}
                   >
-                    <span
+                    <div
                       style={
-                        styles.collegeType
+                        styles.collegeLogo
                       }
                     >
-                      {college.type}
-                    </span>
+                      {getIconLetter(
+                        college
+                      )}
+                    </div>
 
-                    <span
-                      style={{
-                        ...styles.matchBadge,
-                        color:
-                          college.match ===
-                          "High Match"
-                            ? C.green
-                            : C.blue,
-                        background:
-                          college.match ===
-                          "High Match"
-                            ? C.mint
-                            : "#EEF5FC",
-                      }}
+                    <div
+                      style={
+                        styles.collegeBody
+                      }
                     >
-                      {college.match}
-                    </span>
-                  </div>
+                      <div
+                        style={
+                          styles.collegeTop
+                        }
+                      >
+                        <span
+                          style={
+                            styles.collegeType
+                          }
+                        >
+                          {
+                            college.type
+                          }
+                        </span>
 
-                  <div
-                    style={
-                      styles.collegeName
-                    }
-                  >
-                    {college.name}
-                  </div>
+                        <span
+                          style={{
+                            ...styles.matchBadge,
+                            color:
+                              isHighMatch
+                                ? C.green
+                                : C.blue,
+                            background:
+                              isHighMatch
+                                ? C.mint
+                                : "#EEF5FC",
+                          }}
+                        >
+                          {
+                            college.match ||
+                              "Available"
+                          }
+                        </span>
+                      </div>
 
-                  <div
-                    style={
-                      styles.collegeLocation
-                    }
-                  >
-                    <Icon
-                      name="location"
-                      size={12}
-                      stroke={C.muted}
-                    />
+                      <div
+                        style={
+                          styles.collegeName
+                        }
+                      >
+                        {
+                          college.name
+                        }
+                      </div>
 
-                    {college.location}
-                  </div>
+                      <div
+                        style={
+                          styles.collegeLocation
+                        }
+                      >
+                        <Icon
+                          name="location"
+                          size={12}
+                          stroke={
+                            C.muted
+                          }
+                        />
 
-                  <div
-                    style={
-                      styles.collegeMeta
-                    }
-                  >
-                    <span>
-                      Cutoff:{" "}
-                      <strong>
-                        {college.cutoff}
-                      </strong>
-                    </span>
+                        {
+                          college.location
+                        }
+                      </div>
 
-                    <span>
-                      Rank:{" "}
-                      <strong>
-                        {college.rank}
-                      </strong>
-                    </span>
-                  </div>
-                </div>
+                      <div
+                        style={
+                          styles.collegeMeta
+                        }
+                      >
+                        <span>
+                          Cutoff:{" "}
+                          <strong>
+                            {getCutoffDisplay(
+                              college
+                            )}
+                          </strong>
+                        </span>
 
-                <div
-                  style={
-                    styles.collegeArrow
-                  }
-                >
-                  <Icon
-                    name="arrow"
-                    size={16}
-                    stroke={C.green}
-                  />
-                </div>
-              </button>
-            )
-          )}
+                        <span>
+                          Rank:{" "}
+                          <strong>
+                            {getRankDisplay(
+                              college
+                            )}
+                          </strong>
+                        </span>
+
+                        {isCollegeSaved && (
+                          <span
+                            style={{
+                              color:
+                                C.green,
+                              fontWeight: 900,
+                            }}
+                          >
+                            Saved
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      style={
+                        styles.collegeArrow
+                      }
+                    >
+                      <Icon
+                        name="arrow"
+                        size={16}
+                        stroke={
+                          C.green
+                        }
+                      />
+                    </div>
+                  </button>
+                );
+              }
+            )}
 
           <div
-            style={styles.tip}
+            style={
+              styles.tip
+            }
           >
             <Icon
               name="info"
               size={17}
-              stroke={C.green}
+              stroke={
+                C.green
+              }
             />
 
             <span>
-              Predictions are indicative.
-              Actual admission depends on
-              official counselling, cutoffs and
-              seat availability.
+              Predictions are
+              indicative. Actual
+              admission depends on
+              official counselling,
+              cutoffs and seat
+              availability.
             </span>
           </div>
         </main>
@@ -954,31 +1681,53 @@ export default function CollegePredictor({
         right="College Predictor"
       />
 
-      <main style={styles.container}>
-        <div style={styles.kicker}>
+      <main
+        style={
+          styles.container
+        }
+      >
+        <div
+          style={
+            styles.kicker
+          }
+        >
           SMART ADMISSION GUIDE
         </div>
 
-        <h1 style={styles.title}>
+        <h1
+          style={styles.title}
+        >
           College Predictor
         </h1>
 
-        <p style={styles.subtitle}>
-          Enter your expected performance and
-          discover colleges you can target for
+        <p
+          style={
+            styles.subtitle
+          }
+        >
+          Enter your expected
+          performance and
+          discover colleges you
+          can target for
           admission.
         </p>
 
         <section
-          style={styles.heroCard}
+          style={
+            styles.heroCard
+          }
         >
           <div
-            style={styles.heroIcon}
+            style={
+              styles.heroIcon
+            }
           >
             <Icon
               name="target"
               size={25}
-              stroke={C.green}
+              stroke={
+                C.green
+              }
             />
           </div>
 
@@ -988,22 +1737,31 @@ export default function CollegePredictor({
             }}
           >
             <div
-              style={styles.heroTitle}
+              style={
+                styles.heroTitle
+              }
             >
-              Know your college options
+              Know your college
+              options
             </div>
 
             <div
-              style={styles.heroText}
+              style={
+                styles.heroText
+              }
             >
-              Get a personalised list based on
-              your exam, score and preferences.
+              Get a personalised
+              list based on your
+              exam, score and
+              preferences.
             </div>
           </div>
         </section>
 
         <section
-          style={styles.formCard}
+          style={
+            styles.formCard
+          }
         >
           <div
             style={
@@ -1014,70 +1772,96 @@ export default function CollegePredictor({
           </div>
 
           <div
-            style={styles.examGrid}
+            style={
+              styles.examGrid
+            }
           >
-            {exams.map((exam) => {
-              const active =
-                selectedExam ===
-                exam.id;
+            {exams.map(
+              (exam) => {
+                const active =
+                  selectedExam ===
+                  exam.id;
 
-              return (
-                <button
-                  type="button"
-                  key={exam.id}
-                  style={{
-                    ...styles.examButton,
-                    ...(active
-                      ? styles.activeExamButton
-                      : {}),
-                  }}
-                  onClick={() =>
-                    setSelectedExam(
+                return (
+                  <button
+                    type="button"
+                    key={
                       exam.id
-                    )
-                  }
-                >
-                  <div
+                    }
                     style={{
-                      ...styles.examRadio,
+                      ...styles.examButton,
                       ...(active
-                        ? styles.activeRadio
+                        ? styles.activeExamButton
                         : {}),
                     }}
-                  >
-                    {active && (
-                      <Icon
-                        name="check"
-                        size={13}
-                        stroke="#FFFFFF"
-                      />
-                    )}
-                  </div>
+                    onClick={() => {
+                      setSelectedExam(
+                        exam.id
+                      );
 
-                  <div
-                    style={{
-                      minWidth: 0,
+                      setScore(
+                        ""
+                      );
+
+                      setError(
+                        ""
+                      );
+
+                      setResults(
+                        []
+                      );
+
+                      setStage(
+                        "form"
+                      );
                     }}
                   >
                     <div
-                      style={
-                        styles.examName
-                      }
+                      style={{
+                        ...styles.examRadio,
+                        ...(active
+                          ? styles.activeRadio
+                          : {}),
+                      }}
                     >
-                      {exam.label}
+                      {active && (
+                        <Icon
+                          name="check"
+                          size={13}
+                          stroke="#010F0E"
+                        />
+                      )}
                     </div>
 
                     <div
-                      style={
-                        styles.examSub
-                      }
+                      style={{
+                        minWidth: 0,
+                      }}
                     >
-                      {exam.sub}
+                      <div
+                        style={
+                          styles.examName
+                        }
+                      >
+                        {
+                          exam.label
+                        }
+                      </div>
+
+                      <div
+                        style={
+                          styles.examSub
+                        }
+                      >
+                        {
+                          exam.sub
+                        }
+                      </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              }
+            )}
           </div>
 
           <div
@@ -1089,7 +1873,9 @@ export default function CollegePredictor({
           </div>
 
           <div
-            style={styles.inputWrap}
+            style={
+              styles.inputWrap
+            }
           >
             <div
               style={{
@@ -1099,49 +1885,37 @@ export default function CollegePredictor({
             >
               <input
                 value={score}
-                onChange={(e) =>
-                  setScore(
-                    e.target.value
-                  )
-                }
-                type="number"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9.]/g, "");
+                  setScore(val);
+                  if (error) setError("");
+                }}
+                type="text"
                 inputMode="decimal"
                 placeholder={
-                  selectedExam ===
-                  "neet"
+                  selectedExam === "neet"
                     ? "e.g. 620"
-                    : selectedExam ===
-                      "jee"
-                    ? "e.g. 97"
-                    : "e.g. 780"
+                    : selectedExam === "jee"
+                    ? "e.g. 98.5"
+                    : "e.g. 650"
                 }
                 aria-label="Expected score"
                 style={
                   styles.scoreInput
                 }
               />
-
-              <div
-                style={
-                  styles.inputHint
-                }
-              >
-                {selectedExam ===
-                "jee"
-                  ? "Enter expected percentile"
-                  : "Enter your expected score"}
-              </div>
             </div>
 
             <div
               style={
-                styles.scoreSuffix
+                styles.scoreSuffixBadge
               }
             >
-              {selectedExam ===
-              "jee"
+              {selectedExam === "jee"
                 ? "Percentile"
-                : "Marks"}
+                : selectedExam === "neet"
+                ? "Max 720"
+                : "Max 800"}
             </div>
           </div>
 
@@ -1160,37 +1934,44 @@ export default function CollegePredictor({
           >
             <div>
               <label
-                style={styles.label}
+                style={
+                  styles.label
+                }
               >
                 Category
               </label>
 
               <select
-                value={category}
+                value={
+                  category
+                }
                 onChange={(e) =>
                   setCategory(
-                    e.target.value
+                    e.target
+                      .value
                   )
                 }
-                style={styles.select}
+                style={
+                  styles.select
+                }
               >
-                <option>
+                <option style={styles.option}>
                   General
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   OBC
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   SC
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   ST
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   EWS
                 </option>
               </select>
@@ -1198,7 +1979,9 @@ export default function CollegePredictor({
 
             <div>
               <label
-                style={styles.label}
+                style={
+                  styles.label
+                }
               >
                 Preferred State
               </label>
@@ -1207,74 +1990,112 @@ export default function CollegePredictor({
                 value={state}
                 onChange={(e) =>
                   setState(
-                    e.target.value
+                    e.target
+                      .value
                   )
                 }
-                style={styles.select}
+                style={
+                  styles.select
+                }
               >
-                <option>
+                <option style={styles.option}>
                   Jammu & Kashmir
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   Delhi
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   Uttar Pradesh
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   Maharashtra
                 </option>
 
-                <option>
+                <option style={styles.option}>
                   All India
                 </option>
               </select>
             </div>
           </div>
 
+          {error &&
+            stage ===
+              "form" && (
+              <div
+                style={
+                  styles.formError
+                }
+              >
+                {error}
+              </div>
+            )}
+
           <button
             type="button"
             style={{
               ...styles.primaryButton,
-              opacity: score.trim()
-                ? 1
-                : 0.55,
-              cursor: score.trim()
-                ? "pointer"
-                : "not-allowed",
+              opacity:
+                loading
+                  ? 0.7
+                  : score.trim()
+                  ? 1
+                  : 0.55,
+              cursor:
+                loading
+                  ? "wait"
+                  : score.trim()
+                  ? "pointer"
+                  : "not-allowed",
             }}
-            onClick={predict}
-            disabled={!score.trim()}
+            onClick={
+              predict
+            }
+            disabled={
+              loading ||
+              !score.trim()
+            }
           >
             <Icon
               name="search"
               size={18}
-              stroke="#FFFFFF"
+              stroke="#010F0E"
             />
 
-            Predict My Colleges
+            <span>
+              {loading
+                ? "Finding Colleges..."
+                : "Predict My Colleges"}
+            </span>
 
-            <Icon
-              name="arrow"
-              size={17}
-              stroke="#FFFFFF"
-            />
+            {!loading && (
+              <Icon
+                name="arrow"
+                size={17}
+                stroke="#010F0E"
+              />
+            )}
           </button>
         </section>
 
         <section
-          style={styles.howCard}
+          style={
+            styles.howCard
+          }
         >
           <div
-            style={styles.howIcon}
+            style={
+              styles.howIcon
+            }
           >
             <Icon
               name="trend"
               size={18}
-              stroke={C.green}
+              stroke={
+                C.green
+              }
             />
           </div>
 
@@ -1284,18 +2105,25 @@ export default function CollegePredictor({
             }}
           >
             <div
-              style={styles.howTitle}
+              style={
+                styles.howTitle
+              }
             >
               How prediction works
             </div>
 
             <div
-              style={styles.howText}
+              style={
+                styles.howText
+              }
             >
-              We compare your expected
-              performance with previous admission
-              trends and present colleges across
-              different probability levels.
+              We compare your
+              expected performance
+              with published
+              prediction data and
+              present colleges that
+              match your selected
+              preferences.
             </div>
           </div>
         </section>
@@ -1308,10 +2136,20 @@ export default function CollegePredictor({
    PAGE
 ========================================================= */
 
-function Page({ children }) {
+function Page({
+  children,
+}) {
   return (
-    <div style={styles.page}>
-      <div style={styles.mobileShell}>
+    <div
+      style={
+        styles.page
+      }
+    >
+      <div
+        style={
+          styles.mobileShell
+        }
+      >
         {children}
       </div>
     </div>
@@ -1327,12 +2165,24 @@ function Header({
   right,
 }) {
   return (
-    <header style={styles.header}>
-      <div style={styles.headerInner}>
+    <header
+      style={
+        styles.header
+      }
+    >
+      <div
+        style={
+          styles.headerInner
+        }
+      >
         <button
           type="button"
-          style={styles.backButton}
-          onClick={onBack}
+          style={
+            styles.backButton
+          }
+          onClick={
+            onBack
+          }
           aria-label="Go back"
         >
           <Icon
@@ -1347,19 +2197,27 @@ function Header({
             minWidth: 0,
           }}
         >
-          <div style={styles.brand}>
+          <div
+            style={
+              styles.brand
+            }
+          >
             ILS RANKER
           </div>
 
           <div
-            style={styles.headerTagline}
+            style={
+              styles.headerTagline
+            }
           >
             KNOW YOUR POTENTIAL
           </div>
         </div>
 
         <div
-          style={styles.headerRight}
+          style={
+            styles.headerRight
+          }
         >
           {right}
         </div>
@@ -1379,7 +2237,9 @@ function DetailMetric({
 }) {
   return (
     <div
-      style={styles.detailMetric}
+      style={
+        styles.detailMetric
+      }
     >
       <div
         style={
@@ -1392,9 +2252,10 @@ function DetailMetric({
       <div
         style={{
           ...styles.detailMetricValue,
-          color: green
-            ? C.green
-            : C.navy,
+          color:
+            green
+              ? C.green
+              : C.navy,
         }}
       >
         {value}
@@ -1411,21 +2272,20 @@ const styles = {
   page: {
     width: "100%",
     minHeight: "100dvh",
-    background: C.mint,
-    color: C.navy,
+    background: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+    color: "#FFFFFF",
     display: "flex",
     justifyContent: "center",
     alignItems: "stretch",
     boxSizing: "border-box",
-    fontFamily:
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   mobileShell: {
     width: "100%",
-    maxWidth: "390px",
+    maxWidth: "430px",
     minHeight: "100dvh",
-    background: C.mint,
+    background: "transparent",
     overflow: "visible",
     boxSizing: "border-box",
   },
@@ -1434,8 +2294,9 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 20,
-    background: C.white,
-    borderBottom: `1px solid ${C.border}`,
+    background: "rgba(6, 49, 43, 0.85)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+    backdropFilter: "blur(16px)",
   },
 
   headerInner: {
@@ -1540,67 +2401,73 @@ const styles = {
   },
 
   heroTitle: {
-    fontSize: 12.5,
-    fontWeight: 900,
+    fontSize: 15,
+    fontWeight: 850,
+    color: "#FFFFFF",
   },
 
   heroText: {
     marginTop: 4,
-    color: C.muted,
-    fontSize: 9.5,
+    color: "rgba(226, 232, 240, 0.75)",
+    fontSize: 12.5,
     lineHeight: 1.45,
   },
 
   formCard: {
-    marginTop: 12,
-    padding: 16,
-    background: C.white,
+    marginTop: 14,
+    padding: 18,
+    background: "rgba(255, 255, 255, 0.04)",
     borderRadius: 20,
     border: `1px solid ${C.border}`,
     boxShadow:
-      "0 7px 21px rgba(8,47,60,0.045)",
+      "0 10px 25px rgba(0, 0, 0, 0.25)",
     boxSizing: "border-box",
   },
 
   formSectionTitle: {
-    fontSize: 11.5,
-    fontWeight: 900,
-    marginTop: 4,
-    marginBottom: 10,
+    fontSize: 13.5,
+    fontWeight: 800,
+    color: "#FFFFFF",
+    marginTop: 6,
+    marginBottom: 11,
+    letterSpacing: "0.02em",
   },
 
   examGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(3, minmax(0, 1fr))",
-    gap: 7,
+    gap: 8,
   },
 
   examButton: {
     minWidth: 0,
-    minHeight: 68,
+    minHeight: 70,
     display: "flex",
     alignItems: "center",
-    gap: 7,
-    padding: 9,
+    gap: 8,
+    padding: "10px 10px",
     border: `1px solid ${C.border}`,
-    background: C.white,
-    borderRadius: 12,
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 13,
     textAlign: "left",
     cursor: "pointer",
     boxSizing: "border-box",
+    transition: "all 0.2s ease",
   },
 
   activeExamButton: {
-    borderColor: C.green,
-    background: C.mint,
+    borderColor: "#10E79D",
+    background: "rgba(16, 231, 157, 0.12)",
+    boxShadow: "0 0 14px rgba(16, 231, 157, 0.18)",
   },
 
   examRadio: {
     width: 24,
     height: 24,
     borderRadius: 8,
-    border: `1px solid ${C.border}`,
+    border: `1px solid rgba(255, 255, 255, 0.2)`,
+    background: "rgba(255, 255, 255, 0.06)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1608,31 +2475,34 @@ const styles = {
   },
 
   activeRadio: {
-    background: C.green,
-    borderColor: C.green,
+    background: "#10E79D",
+    borderColor: "#10E79D",
   },
 
   examName: {
-    fontSize: 10,
-    lineHeight: 1.15,
-    fontWeight: 850,
+    fontSize: 12.5,
+    lineHeight: 1.2,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   examSub: {
     marginTop: 3,
-    fontSize: 8.5,
-    lineHeight: 1.15,
-    color: C.muted,
+    fontSize: 11,
+    lineHeight: 1.2,
+    color: "rgba(226, 232, 240, 0.65)",
   },
 
   inputWrap: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    gap: 12,
     border: `1px solid ${C.border}`,
-    borderRadius: 13,
-    padding: "5px 11px",
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 14,
+    padding: "0 14px",
+    minHeight: 52,
     boxSizing: "border-box",
   },
 
@@ -1641,24 +2511,21 @@ const styles = {
     border: "none",
     outline: "none",
     background: "transparent",
-    padding:
-      "7px 0 0",
-    fontSize: 17,
-    fontWeight: 850,
-    color: C.navy,
+    padding: "13px 0",
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#FFFFFF",
     boxSizing: "border-box",
   },
 
-  inputHint: {
-    color: C.muted,
-    fontSize: 8.5,
-    paddingBottom: 6,
-  },
-
-  scoreSuffix: {
-    color: C.green,
-    fontSize: 9,
-    fontWeight: 850,
+  scoreSuffixBadge: {
+    color: "#10E79D",
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
+    padding: "5px 10px",
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 800,
     whiteSpace: "nowrap",
     flexShrink: 0,
   },
@@ -1667,69 +2534,89 @@ const styles = {
     display: "grid",
     gridTemplateColumns:
       "repeat(2, minmax(0, 1fr))",
-    gap: 8,
+    gap: 10,
   },
 
   label: {
     display: "block",
-    marginBottom: 5,
-    color: C.muted,
-    fontSize: 8.5,
+    marginBottom: 6,
+    color: "rgba(226, 232, 240, 0.75)",
+    fontSize: 12,
     fontWeight: 750,
   },
 
   select: {
     width: "100%",
     padding:
-      "10px 8px",
-    borderRadius: 11,
+      "11px 10px",
+    borderRadius: 12,
     border: `1px solid ${C.border}`,
-    background: C.white,
-    color: C.navy,
-    fontSize: 9.5,
-    fontWeight: 750,
+    background: "rgba(255, 255, 255, 0.06)",
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: 700,
     outline: "none",
     boxSizing: "border-box",
+    colorScheme: "dark",
+    cursor: "pointer",
+  },
+
+  option: {
+    background: "#04241F",
+    color: "#FFFFFF",
+    padding: "8px 10px",
+  },
+
+  formError: {
+    marginTop: 10,
+    padding: "10px 12px",
+    borderRadius: 11,
+    background: "rgba(255, 94, 98, 0.12)",
+    border: "1px solid rgba(255, 94, 98, 0.3)",
+    color: "#FF6B6B",
+    fontSize: 12,
+    lineHeight: 1.4,
   },
 
   primaryButton: {
     width: "100%",
-    marginTop: 16,
+    marginTop: 18,
     minHeight: 52,
     padding:
-      "13px 12px",
-    borderRadius: 13,
+      "14px 16px",
+    borderRadius: 14,
     border: "none",
-    background: C.green,
-    color: C.white,
+    background: "linear-gradient(135deg, #10E79D 0%, #00C882 100%)",
+    color: "#010F0E",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    fontSize: 11.5,
+    gap: 10,
+    fontSize: 15,
     fontWeight: 900,
     cursor: "pointer",
     boxShadow:
-      "0 8px 18px rgba(0,112,80,0.15)",
+      "0 8px 24px rgba(16, 231, 157, 0.28)",
     boxSizing: "border-box",
   },
 
   howCard: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 17,
-    background: C.white,
+    marginTop: 14,
+    padding: 16,
+    borderRadius: 18,
+    background: "rgba(255, 255, 255, 0.04)",
     border: `1px solid ${C.border}`,
     display: "flex",
-    gap: 10,
+    gap: 12,
     boxSizing: "border-box",
   },
 
   howIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    background: C.mint,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1737,14 +2624,15 @@ const styles = {
   },
 
   howTitle: {
-    fontSize: 11,
-    fontWeight: 900,
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   howText: {
     marginTop: 4,
-    color: C.muted,
-    fontSize: 9,
+    color: "rgba(226, 232, 240, 0.75)",
+    fontSize: 12.5,
     lineHeight: 1.5,
   },
 
@@ -1892,31 +2780,65 @@ const styles = {
     flexShrink: 0,
   },
 
+  stateCard: {
+    marginTop: 11,
+    padding: 15,
+    borderRadius: 16,
+    background: C.white,
+    border: `1px solid ${C.border}`,
+    boxSizing: "border-box",
+  },
+
+  stateTitle: {
+    fontSize: 11.5,
+    fontWeight: 900,
+  },
+
+  stateText: {
+    marginTop: 5,
+    color: C.muted,
+    fontSize: 8.8,
+    lineHeight: 1.5,
+  },
+
+  retryButton: {
+    marginTop: 10,
+    border: `1px solid ${C.green}`,
+    borderRadius: 9,
+    background: C.white,
+    color: C.green,
+    padding: "7px 10px",
+    fontSize: 8.5,
+    fontWeight: 850,
+    cursor: "pointer",
+  },
+
   collegeCard: {
     width: "100%",
     border: `1px solid ${C.border}`,
-    background: C.white,
-    borderRadius: 17,
-    padding: 12,
-    marginBottom: 9,
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 10,
     display: "flex",
     alignItems: "flex-start",
-    gap: 9,
+    gap: 12,
     textAlign: "left",
     cursor: "pointer",
     boxSizing: "border-box",
   },
 
   collegeLogo: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 13,
-    background: C.mint,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     color: C.green,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 900,
     flexShrink: 0,
   },
@@ -1930,12 +2852,12 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 6,
+    gap: 8,
   },
 
   collegeType: {
-    color: C.muted,
-    fontSize: 7,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 11,
     fontWeight: 800,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -1943,27 +2865,28 @@ const styles = {
 
   matchBadge: {
     padding:
-      "4px 6px",
-    borderRadius: 7,
-    fontSize: 6.8,
-    fontWeight: 900,
+      "4px 8px",
+    borderRadius: 8,
+    fontSize: 11,
+    fontWeight: 850,
     whiteSpace: "nowrap",
   },
 
   collegeName: {
     marginTop: 5,
-    fontSize: 11.5,
-    lineHeight: 1.2,
-    fontWeight: 900,
+    fontSize: 15,
+    lineHeight: 1.25,
+    fontWeight: 850,
+    color: "#FFFFFF",
   },
 
   collegeLocation: {
     marginTop: 4,
     display: "flex",
     alignItems: "center",
-    gap: 4,
-    color: C.muted,
-    fontSize: 8,
+    gap: 5,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
     lineHeight: 1.3,
   },
 
@@ -1971,16 +2894,17 @@ const styles = {
     marginTop: 8,
     display: "flex",
     flexWrap: "wrap",
-    gap: 10,
-    color: C.muted,
-    fontSize: 8,
+    gap: 12,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
   },
 
   collegeArrow: {
-    width: 27,
-    height: 27,
-    borderRadius: 9,
-    background: C.mint,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    background: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1988,24 +2912,24 @@ const styles = {
   },
 
   tip: {
-    marginTop: 13,
-    padding: 11,
-    borderRadius: 12,
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 13,
     background: C.softMint,
     display: "flex",
-    gap: 7,
+    gap: 8,
     alignItems: "flex-start",
-    color: C.muted,
-    fontSize: 8.5,
+    color: "rgba(226, 232, 240, 0.8)",
+    fontSize: 12,
     lineHeight: 1.45,
   },
 
   detailHero: {
     display: "flex",
     alignItems: "flex-start",
-    gap: 12,
-    padding: 16,
-    background: C.white,
+    gap: 14,
+    padding: 18,
+    background: "rgba(255, 255, 255, 0.04)",
     borderRadius: 20,
     border: `1px solid ${C.border}`,
     boxSizing: "border-box",
@@ -2015,19 +2939,20 @@ const styles = {
     width: 55,
     height: 55,
     borderRadius: 17,
-    background: C.mint,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
     color: C.green,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: 900,
     flexShrink: 0,
   },
 
   detailType: {
     color: C.green,
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: 900,
     letterSpacing: 0.8,
     textTransform: "uppercase",
@@ -2035,18 +2960,19 @@ const styles = {
 
   detailTitle: {
     margin: "5px 0 0",
-    fontSize: 19,
+    fontSize: 20,
     lineHeight: 1.25,
     fontWeight: 900,
+    color: "#FFFFFF",
   },
 
   detailLocation: {
     marginTop: 7,
     display: "flex",
     alignItems: "center",
-    gap: 5,
-    color: C.muted,
-    fontSize: 8.5,
+    gap: 6,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
     lineHeight: 1.35,
   },
 
@@ -2054,59 +2980,62 @@ const styles = {
     display: "grid",
     gridTemplateColumns:
       "repeat(3, minmax(0, 1fr))",
-    gap: 7,
-    marginTop: 10,
+    gap: 8,
+    marginTop: 12,
   },
 
   detailMetric: {
-    padding: 11,
+    padding: 12,
     borderRadius: 15,
-    background: C.white,
+    background: "rgba(255, 255, 255, 0.04)",
     border: `1px solid ${C.border}`,
     minWidth: 0,
     boxSizing: "border-box",
   },
 
   detailMetricLabel: {
-    color: C.muted,
-    fontSize: 7.5,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 11,
     fontWeight: 750,
   },
 
   detailMetricValue: {
     marginTop: 5,
-    fontSize: 10,
+    fontSize: 14,
     lineHeight: 1.3,
-    fontWeight: 900,
+    fontWeight: 850,
+    color: "#FFFFFF",
   },
 
   panel: {
-    marginTop: 11,
-    padding: 15,
-    background: C.white,
+    marginTop: 12,
+    padding: 16,
+    background: "rgba(255, 255, 255, 0.04)",
     borderRadius: 18,
     border: `1px solid ${C.border}`,
     boxSizing: "border-box",
   },
 
   panelTitle: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: 900,
-    marginBottom: 4,
+    marginBottom: 6,
+    color: "#FFFFFF",
   },
 
   reasonRow: {
     display: "flex",
-    gap: 9,
-    padding: "12px 0",
+    gap: 10,
+    padding: "13px 0",
     borderBottom: `1px solid ${C.border}`,
   },
 
   reasonIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    background: C.mint,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -2114,27 +3043,29 @@ const styles = {
   },
 
   reasonTitle: {
-    fontSize: 10.5,
-    fontWeight: 850,
+    fontSize: 13.5,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   reasonText: {
     marginTop: 4,
-    color: C.muted,
-    fontSize: 8.5,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
     lineHeight: 1.5,
   },
 
   disclaimer: {
-    marginTop: 11,
-    padding: 11,
-    borderRadius: 12,
-    background: "#F8FAF9",
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 13,
+    background: "rgba(255, 255, 255, 0.04)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
     display: "flex",
     alignItems: "flex-start",
-    gap: 7,
-    color: C.muted,
-    fontSize: 8,
+    gap: 8,
+    color: "rgba(226, 232, 240, 0.65)",
+    fontSize: 11.5,
     lineHeight: 1.45,
   },
 };

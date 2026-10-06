@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from "react";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  red: "#D94B55",
-  yellow: "#C78A13",
-  blue: "#3679C9",
-  purple: "#7652C8",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+  softMint: "rgba(16, 231, 157, 0.12)",
+  white: "rgba(255, 255, 255, 0.05)",
+  muted: "rgba(226, 232, 240, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  red: "#FF5E62",
+  yellow: "#FBBF24",
+  blue: "#38BDF8",
+  purple: "#A855F7",
 };
 
 const subjects = [
@@ -152,7 +152,7 @@ function getStatus(score) {
     return {
       label: "Excellent",
       color: C.green,
-      bg: C.mint,
+      bg: "rgba(16, 231, 157, 0.15)",
     };
   }
 
@@ -160,7 +160,7 @@ function getStatus(score) {
     return {
       label: "Good",
       color: C.blue,
-      bg: "#EEF5FC",
+      bg: "rgba(56, 189, 248, 0.15)",
     };
   }
 
@@ -168,31 +168,96 @@ function getStatus(score) {
     return {
       label: "Needs Practice",
       color: C.yellow,
-      bg: "#FFF8E8",
+      bg: "rgba(251, 191, 36, 0.15)",
     };
   }
 
   return {
     label: "Weak Area",
     color: C.red,
-    bg: "#FFF0F1",
+    bg: "rgba(239, 68, 68, 0.15)",
   };
 }
 
 export default function ChapterAnalysis({
+  profile,
   onBack,
   onOpenSection,
 }) {
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const [analytics, setAnalytics] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(0);
 
-  const subject = subjects[selectedSubject];
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const mobile =
+          profile?.mobile ||
+          localStorage.getItem("ils_user_mobile") ||
+          "";
+
+        const email = profile?.email || "";
+        const googleId = profile?.googleId || "";
+
+        const params = new URLSearchParams();
+        if (mobile) params.set("mobile", mobile);
+        if (email) params.set("email", email);
+        if (googleId) params.set("googleId", googleId);
+
+        const res = await fetch(`${API_URL}/api/analytics?${params.toString()}`);
+        if (!res.ok) throw new Error("Failed to load");
+        const data = await res.json();
+        if (!cancelled && data?.success) {
+          setAnalytics(data);
+        }
+      } catch (err) {
+        console.warn("ChapterAnalysis analytics notice:", err);
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_URL, profile?.mobile, profile?.email, profile?.googleId]);
+
+  const displaySubjects = useMemo(() => {
+    if (analytics?.subjects?.length > 0) {
+      return analytics.subjects.map((sub, i) => {
+        const fallback =
+          subjects.find(
+            (s) => s.name.toLowerCase() === sub.subjectName.toLowerCase()
+          ) || subjects[i % subjects.length];
+
+        return {
+          ...fallback,
+          name: sub.subjectName,
+          score: sub.accuracy || 0,
+        };
+      });
+    }
+
+    return subjects;
+  }, [analytics]);
+
+  const subject =
+    displaySubjects[selectedSubject] ||
+    displaySubjects[0] ||
+    subjects[0];
 
   const overall = useMemo(() => {
+    if (analytics?.overview?.averageAccuracy) {
+      return analytics.overview.averageAccuracy;
+    }
+
     return Math.round(
-      subjects.reduce((sum, item) => sum + item.score, 0) /
-        subjects.length
+      displaySubjects.reduce((sum, item) => sum + item.score, 0) /
+        displaySubjects.length
     );
-  }, []);
+  }, [analytics, displaySubjects]);
 
   const weakChapters = subject.chapters.filter(
     (chapter) => chapter.score < 60
@@ -309,7 +374,7 @@ export default function ChapterAnalysis({
           </div>
 
           <div style={styles.subjectScroller}>
-            {subjects.map((item, index) => {
+            {displaySubjects.map((item, index) => {
               const active =
                 selectedSubject === index;
 
@@ -617,9 +682,9 @@ const styles = {
 
   mobileShell: {
     width: "100%",
-    maxWidth: "390px",
+    maxWidth: "430px",
     minHeight: "100dvh",
-    background: C.white,
+    background: "transparent",
     overflow: "hidden",
     boxSizing: "border-box",
     display: "flex",
@@ -630,7 +695,9 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 20,
-    background: C.white,
+    background: "rgba(6, 49, 43, 0.85)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
     borderBottom: `1px solid ${C.border}`,
     flexShrink: 0,
   },
@@ -650,7 +717,8 @@ const styles = {
     height: 40,
     borderRadius: 12,
     border: `1px solid ${C.border}`,
-    background: C.white,
+    background: "rgba(255, 255, 255, 0.08)",
+    color: "#10E79D",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -772,76 +840,78 @@ const styles = {
   donutLabel: {
     marginTop: 3,
     color: C.muted,
-    fontSize: 8,
-    fontWeight: 750,
+    fontSize: 11,
+    fontWeight: 700,
   },
 
   overviewEyebrow: {
     color: C.green,
-    fontSize: 7.5,
+    fontSize: 11,
     letterSpacing: 0.8,
-    fontWeight: 900,
+    fontWeight: 800,
   },
 
   overviewTitle: {
     marginTop: 4,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 900,
+    color: "#FFFFFF",
   },
 
   overviewText: {
     marginTop: 5,
-    color: C.muted,
-    fontSize: 9.5,
+    color: "rgba(226, 232, 240, 0.75)",
+    fontSize: 13,
     lineHeight: 1.5,
   },
 
   overviewStats: {
     display: "flex",
     flexWrap: "wrap",
-    gap: 12,
-    marginTop: 10,
+    gap: 14,
+    marginTop: 12,
   },
 
   miniStat: {
-    minWidth: 48,
+    minWidth: 52,
   },
 
   miniValue: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: 900,
     color: C.green,
   },
 
   miniLabel: {
-    marginTop: 2,
-    fontSize: 7.5,
-    color: C.muted,
-    fontWeight: 700,
+    marginTop: 3,
+    fontSize: 11,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontWeight: 600,
   },
 
   sectionHeading: {
-    marginTop: 20,
-    marginBottom: 9,
+    marginTop: 22,
+    marginBottom: 10,
   },
 
   sectionTitle: {
     margin: 0,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 900,
+    color: "#FFFFFF",
   },
 
   sectionSubtitle: {
     margin: "4px 0 0",
-    color: C.muted,
-    fontSize: 9.5,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
   },
 
   subjectScroller: {
     display: "flex",
-    gap: 7,
+    gap: 8,
     overflowX: "auto",
-    paddingBottom: 2,
+    paddingBottom: 4,
     scrollbarWidth: "none",
     WebkitOverflowScrolling: "touch",
   },
@@ -849,14 +919,14 @@ const styles = {
   subjectButton: {
     border: `1px solid ${C.border}`,
     background: C.white,
-    borderRadius: 11,
-    padding: "8px 10px",
+    borderRadius: 12,
+    padding: "9px 13px",
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    color: C.muted,
-    fontSize: 9.5,
-    fontWeight: 800,
+    gap: 7,
+    color: "rgba(226, 232, 240, 0.8)",
+    fontSize: 12.5,
+    fontWeight: 700,
     cursor: "pointer",
     whiteSpace: "nowrap",
     flexShrink: 0,
@@ -865,16 +935,17 @@ const styles = {
   activeSubject: {
     borderColor: C.green,
     background: C.green,
-    color: C.white,
+    color: "#010F0E",
+    fontWeight: 800,
   },
 
   subjectIcon: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 900,
   },
 
   chapterCard: {
-    marginTop: 11,
+    marginTop: 12,
     background: C.white,
     borderRadius: 19,
     border: `1px solid ${C.border}`,
@@ -882,57 +953,59 @@ const styles = {
   },
 
   chapterHeader: {
-    padding: 15,
+    padding: 16,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    gap: 12,
   },
 
   chapterHeaderLeft: {
     display: "flex",
     alignItems: "center",
-    gap: 9,
+    gap: 10,
     minWidth: 0,
   },
 
   largeSubjectIcon: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    background: C.mint,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 900,
     flexShrink: 0,
   },
 
   chapterEyebrow: {
-    fontSize: 7.5,
+    fontSize: 11,
     letterSpacing: 0.8,
     color: C.green,
-    fontWeight: 900,
+    fontWeight: 800,
   },
 
   chapterTitle: {
     marginTop: 3,
-    fontSize: 12.5,
-    fontWeight: 900,
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   subjectScore: {
-    fontSize: 21,
+    fontSize: 22,
     color: C.green,
     fontWeight: 900,
     flexShrink: 0,
   },
 
   subjectProgressTrack: {
-    height: 5,
+    height: 6,
     background: C.softMint,
-    margin: "0 15px",
+    margin: "0 16px",
     borderRadius: 30,
     overflow: "hidden",
   },
@@ -943,27 +1016,28 @@ const styles = {
   },
 
   chapterList: {
-    padding: "3px 15px 5px",
+    padding: "4px 16px 8px",
   },
 
   chapterRow: {
     display: "flex",
     alignItems: "center",
-    gap: 8,
-    padding: "12px 0",
+    gap: 10,
+    padding: "14px 0",
   },
 
   chapterNumber: {
-    width: 25,
-    height: 25,
-    borderRadius: 7,
-    background: "#F7F9F8",
-    color: C.muted,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    color: "rgba(226, 232, 240, 0.8)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 8,
-    fontWeight: 900,
+    fontSize: 11,
+    fontWeight: 800,
     flexShrink: 0,
   },
 
@@ -976,33 +1050,34 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 7,
+    gap: 8,
   },
 
   chapterName: {
-    fontSize: 10.5,
-    fontWeight: 850,
+    fontSize: 13.5,
+    fontWeight: 750,
+    color: "#FFFFFF",
     minWidth: 0,
   },
 
   status: {
-    fontSize: 7,
-    fontWeight: 900,
-    padding: "4px 5px",
-    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 800,
+    padding: "4px 8px",
+    borderRadius: 7,
     whiteSpace: "nowrap",
     flexShrink: 0,
   },
 
   chapterMeta: {
-    marginTop: 3,
-    color: C.muted,
-    fontSize: 7.5,
+    marginTop: 4,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 11.5,
   },
 
   chapterProgressTrack: {
-    marginTop: 6,
-    height: 4,
+    marginTop: 7,
+    height: 5,
     background: C.softMint,
     borderRadius: 20,
     overflow: "hidden",
@@ -1014,23 +1089,23 @@ const styles = {
   },
 
   chapterScore: {
-    width: 36,
+    width: 42,
     textAlign: "right",
-    fontSize: 11.5,
-    fontWeight: 900,
+    fontSize: 13.5,
+    fontWeight: 850,
     flexShrink: 0,
   },
 
   insightGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: 9,
-    marginTop: 11,
+    gap: 10,
+    marginTop: 12,
   },
 
   insightCard: {
     position: "relative",
-    padding: 13,
+    padding: 15,
     borderRadius: 16,
     background: C.white,
     border: `1px solid ${C.border}`,
@@ -1038,52 +1113,56 @@ const styles = {
   },
 
   insightIcon: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: 10,
-    background: C.mint,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
 
   insightTitle: {
-    marginTop: 9,
-    fontSize: 9.5,
-    fontWeight: 850,
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: 750,
+    color: "#FFFFFF",
   },
 
   insightNumber: {
     position: "absolute",
     top: 12,
     right: 12,
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: 900,
   },
 
   insightText: {
-    marginTop: 3,
-    color: C.muted,
-    fontSize: 8,
+    marginTop: 4,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 11.5,
     lineHeight: 1.45,
   },
 
   recommendationCard: {
-    marginTop: 11,
-    padding: 14,
+    marginTop: 12,
+    padding: 16,
     borderRadius: 17,
-    background: C.softMint,
+    background: "rgba(16, 231, 157, 0.08)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     display: "flex",
     alignItems: "flex-start",
-    gap: 10,
+    gap: 12,
     boxSizing: "border-box",
   },
 
   recommendationIcon: {
-    width: 37,
-    height: 37,
-    borderRadius: 11,
-    background: C.white,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1097,15 +1176,16 @@ const styles = {
 
   recommendationEyebrow: {
     color: C.green,
-    fontSize: 7.5,
+    fontSize: 11,
     letterSpacing: 0.8,
-    fontWeight: 900,
+    fontWeight: 800,
   },
 
   recommendationTitle: {
     marginTop: 4,
-    fontSize: 11.5,
-    fontWeight: 900,
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   recommendationText: {

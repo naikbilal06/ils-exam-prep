@@ -10,6 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/screen-orientation": "^8.0.1",
+    "@capawesome/capacitor-google-sign-in": "^0.1.4",
     "lucide-react": "^1.46.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS = {
   showExplanations: true,
   soundEffects: true,
 
-  darkMode: false,
+  darkMode: true,
 };
 
 const STORAGE_PREFIX = "ils-ranker-settings";
@@ -181,31 +181,19 @@ export default function Settings({
   };
 
   const cardStyle = {
-    background: settings.darkMode
-      ? "#102F38"
-      : "#FFFFFF",
-    border: settings.darkMode
-      ? "1px solid #1D4A55"
-      : "1px solid #E7ECEA",
+    background: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
     borderRadius: 18,
     overflow: "hidden",
   };
 
-  const textPrimary = settings.darkMode
-    ? "#F5FAFA"
-    : "#082F3C";
+  const textPrimary = "#FFFFFF";
 
-  const textSecondary = settings.darkMode
-    ? "#A8BCBF"
-    : "#68777B";
+  const textSecondary = "rgba(226, 232, 240, 0.68)";
 
-  const mutedBg = settings.darkMode
-    ? "#123840"
-    : "#F7FAF8";
+  const mutedBg = "rgba(255, 255, 255, 0.06)";
 
-  const border = settings.darkMode
-    ? "#1D4A55"
-    : "#E7ECEA";
+  const border = "rgba(255, 255, 255, 0.12)";
 
   const rowButton = {
     width: "100%",
@@ -224,13 +212,11 @@ export default function Settings({
     height: 40,
     minWidth: 40,
     borderRadius: 12,
-    background: settings.darkMode
-      ? "#153F48"
-      : "#EAF5F1",
+    background: "rgba(16, 231, 157, 0.15)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#007050",
+    color: "#10E79D",
   };
 
   const toggleStyle = enabled => ({
@@ -239,10 +225,8 @@ export default function Settings({
     borderRadius: 999,
     border: "none",
     background: enabled
-      ? "#007050"
-      : settings.darkMode
-      ? "#476169"
-      : "#CCD7D4",
+      ? "#10E79D"
+      : "rgba(255, 255, 255, 0.2)",
     padding: 3,
     display: "flex",
     alignItems: "center",
@@ -292,9 +276,7 @@ export default function Settings({
       style={{
         minHeight: "100vh",
         minHeight: "100dvh",
-        background: settings.darkMode
-          ? "#071F28"
-          : "#F4FBF7",
+        background: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
         color: textPrimary,
         padding: "16px",
         boxSizing: "border-box",
@@ -1203,11 +1185,11 @@ function SectionCard({
             height: 40,
             minWidth: 40,
             borderRadius: 12,
-            background: "#EAF5F1",
+            background: "rgba(16, 231, 157, 0.12)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#007050",
+            color: "#10E79D",
           }}
         >
           {icon}

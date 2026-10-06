@@ -4,10 +4,32 @@ const UserSchema = new mongoose.Schema(
   {
     mobile: {
       type: String,
-      required: true,
-      unique: true,
       trim: true,
+      unique: true,
+      sparse: true,
       index: true,
+    },
+
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      index: true,
+      default: "",
+    },
+
+    googleId: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["mobile", "google", "both"],
+      default: "mobile",
     },
 
     name: {

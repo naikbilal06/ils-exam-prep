@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
 import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
@@ -6,7 +7,7 @@ import MobileVerification from "./pages/MobileVerification";
 import ExamSelection from "./pages/ExamSelection";
 import SubjectSelection from "./pages/SubjectSelection";
 import NameSetup from "./pages/NameSetup";
-
+import MyColleges from "./pages/MyColleges";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Analysis from "./pages/Analysis";
@@ -17,17 +18,14 @@ import AISuggestions from "./pages/AISuggestions";
 import RankImprovement from "./pages/RankImprovement";
 import CollegePrediction from "./pages/CollegePrediction";
 import GoalTracker from "./pages/GoalTracker";
-
 import TestHistory from "./pages/TestHistory";
 import RetakeImprovement from "./pages/RetakeImprovement";
-
 import RankPredictor from "./pages/RankPredictor";
 import Practice from "./pages/Practice";
 import MockTests from "./pages/MockTests";
 import AICounsellor from "./pages/AICounsellor";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
-
 import SideMenu from "./components/SideMenu";
 
 /* =========================================================
@@ -74,6 +72,7 @@ function BottomNavigation({
     if (
       [
         "college-prediction",
+        "my-colleges",
         "rank-predictor",
       ].includes(activeSection)
     ) {
@@ -100,22 +99,23 @@ function BottomNavigation({
     background: "transparent",
     color:
       activeTab === tab
-        ? "#007050"
-        : "#8A9699",
+        ? "#10E79D"
+        : "rgba(226, 232, 240, 0.6)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
     cursor: "pointer",
-    fontSize: "8px",
+    fontSize: "9px",
     fontWeight:
       activeTab === tab
         ? 900
-        : 750,
+        : 600,
     padding: "3px 0",
     fontFamily:
       "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    transition: "color 0.2s ease",
   });
 
   const iconStyle = {
@@ -210,12 +210,15 @@ function BottomNavigation({
         bottom: 0,
         transform: "translateX(-50%)",
         width: "100%",
-        maxWidth: "390px",
+        maxWidth: "430px",
         height: 68,
         minHeight: 68,
         borderTop:
-          "1px solid #E7EEEB",
-        background: "#FFFFFF",
+          "1px solid rgba(255, 255, 255, 0.12)",
+        background: "rgba(4, 25, 23, 0.94)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        boxShadow: "0 -8px 30px rgba(0,0,0,0.5)",
         display: "grid",
         gridTemplateColumns:
           "repeat(5, minmax(0, 1fr))",
@@ -311,6 +314,21 @@ export default function App() {
   const [selectedExams, setSelectedExams] =
     useState([]);
 
+  /* =======================================================
+     ACTIVE EXAM
+     Saved exams = all selected exams
+     Active exam = currently selected exam
+  ======================================================= */
+
+  const [activeExam, setActiveExam] =
+    useState(() => {
+      try {
+        return localStorage.getItem("ils_active_exam") || "";
+      } catch (e) {
+        return "";
+      }
+    });
+
   const [
     selectedSubjects,
     setSelectedSubjects,
@@ -325,6 +343,9 @@ export default function App() {
   const [menuOpen, setMenuOpen] =
     useState(false);
 
+  const [examModeActive, setExamModeActive] =
+    useState(false);
+
   const [
     dashboardSection,
     setDashboardSection,
@@ -335,31 +356,32 @@ export default function App() {
     setRankPredictorExam,
   ] = useState("");
 
+  const [
+    previousDashboardSection,
+    setPreviousDashboardSection,
+  ] = useState("dashboard");
+
   /* =======================================================
      SPLASH
   ======================================================= */
 
-  const handleSplashComplete =
-    () => {
-      setScreen("onboarding");
-    };
+  const handleSplashComplete = () => {
+    setScreen("onboarding");
+  };
 
   /* =======================================================
      ONBOARDING
   ======================================================= */
 
-  const handleOnboardingContinue =
-    () => {
-      setScreen("mobile");
-    };
+  const handleOnboardingContinue = () => {
+    setScreen("mobile");
+  };
 
   /* =======================================================
      OTP VERIFIED
   ======================================================= */
 
-  const handleVerified = (
-    data
-  ) => {
+  const handleVerified = (data) => {
     if (
       !data?.success ||
       !data?.user
@@ -368,6 +390,19 @@ export default function App() {
     }
 
     const user = data.user;
+
+    const userExams =
+      Array.isArray(user.exams)
+        ? user.exams
+        : [];
+
+    const userSubjects =
+      Array.isArray(user.subjects)
+        ? user.subjects
+        : [];
+
+    const nextActiveExam =
+      userExams[0] || "";
 
     setProfile(user);
 
@@ -379,16 +414,14 @@ export default function App() {
       user.name || ""
     );
 
-    setSelectedExams(
-      Array.isArray(user.exams)
-        ? user.exams
-        : []
+    setSelectedExams(userExams);
+
+    setActiveExam(
+      nextActiveExam
     );
 
     setSelectedSubjects(
-      Array.isArray(user.subjects)
-        ? user.subjects
-        : []
+      userSubjects
     );
 
     setVerifying(false);
@@ -398,7 +431,9 @@ export default function App() {
       "dashboard"
     );
 
-    setRankPredictorExam("");
+    setRankPredictorExam(
+      nextActiveExam
+    );
 
     if (user.profileComplete) {
       setScreen("dashboard");
@@ -411,30 +446,83 @@ export default function App() {
      EXAMS
   ======================================================= */
 
-  const toggleExam = (
-    examId
-  ) => {
-    setSelectedExams(
-      (current) =>
-        current.includes(examId)
-          ? current.filter(
-              (id) => id !== examId
-            )
-          : [...current, examId]
-    );
+  const toggleExam = (examId) => {
+    setSelectedExams((current) => {
+      const next = current.includes(examId)
+        ? current.filter(
+            (id) => id !== examId
+          )
+        : [...current, examId];
+
+      setActiveExam((currentActive) => {
+        if (
+          currentActive &&
+          next.includes(currentActive)
+        ) {
+          return currentActive;
+        }
+
+        return next[0] || "";
+      });
+
+      return next;
+    });
   };
 
-  const handleExamContinue =
-    () => {
-      if (
-        selectedExams.length ===
-        0
-      ) {
-        return;
-      }
+  const handleExamContinue = () => {
+    if (
+      selectedExams.length === 0
+    ) {
+      return;
+    }
 
-      setScreen("subjects");
-    };
+    if (
+      !activeExam ||
+      !selectedExams.includes(activeExam)
+    ) {
+      setActiveExam(
+        selectedExams[0]
+      );
+    }
+
+    setScreen("subjects");
+  };
+
+  /* =======================================================
+     ACTIVE EXAM CHANGE
+  ======================================================= */
+
+  const handleActiveExamChange = (
+    examId
+  ) => {
+    if (!examId) {
+      return;
+    }
+
+    setActiveExam(examId);
+    setRankPredictorExam(examId);
+
+    try {
+      localStorage.setItem("ils_active_exam", examId);
+    } catch (e) {
+      // ignore
+    }
+
+    setSelectedExams((prev) =>
+      prev.includes(examId) ? prev : [...prev, examId]
+    );
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const currentExams = Array.isArray(prev.exams) ? prev.exams : [];
+      return {
+        ...prev,
+        exams: currentExams.includes(examId)
+          ? currentExams
+          : [...currentExams, examId],
+      };
+    });
+  };
 
   /* =======================================================
      SUBJECTS
@@ -445,9 +533,7 @@ export default function App() {
   ) => {
     setSelectedSubjects(
       (current) =>
-        current.includes(
-          subjectId
-        )
+        current.includes(subjectId)
           ? current.filter(
               (id) =>
                 id !== subjectId
@@ -459,17 +545,15 @@ export default function App() {
     );
   };
 
-  const handleSubjectContinue =
-    () => {
-      if (
-        selectedSubjects.length ===
-        0
-      ) {
-        return;
-      }
+  const handleSubjectContinue = () => {
+    if (
+      selectedSubjects.length === 0
+    ) {
+      return;
+    }
 
-      setScreen("name");
-    };
+    setScreen("name");
+  };
 
   /* =======================================================
      CREATE ACCOUNT
@@ -481,10 +565,8 @@ export default function App() {
 
     if (
       !cleanName ||
-      selectedExams.length ===
-        0 ||
-      selectedSubjects.length ===
-        0
+      selectedExams.length === 0 ||
+      selectedSubjects.length === 0
     ) {
       return;
     }
@@ -492,6 +574,189 @@ export default function App() {
     try {
       setVerifying(true);
 
+      const payload = {
+        mobile:
+          profile?.mobile ||
+          mobile ||
+          "",
+        email:
+          profile?.email ||
+          "",
+        googleId:
+          profile?.googleId ||
+          "",
+        name: cleanName,
+        exams: selectedExams,
+        subjects:
+          selectedSubjects,
+      };
+
+      console.log(
+        "Profile save payload:",
+        payload
+      );
+
+      let data;
+
+      if (
+        Capacitor.getPlatform() !==
+        "web"
+      ) {
+        const response =
+          await CapacitorHttp.put({
+            url: `${API_URL}/api/profile`,
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            data: payload,
+          });
+
+        console.log(
+          "Profile save response:",
+          response
+        );
+
+        data =
+          typeof response.data ===
+          "string"
+            ? JSON.parse(
+                response.data
+              )
+            : response.data;
+
+        if (
+          response.status < 200 ||
+          response.status >= 300 ||
+          !data?.success
+        ) {
+          throw new Error(
+            data?.message ||
+              `Unable to save profile (${response.status}).`
+          );
+        }
+      } else {
+        const response =
+          await fetch(
+            `${API_URL}/api/profile`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify(
+                payload
+              ),
+            }
+          );
+
+        data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data?.success
+        ) {
+          throw new Error(
+            data?.message ||
+              "Unable to save profile."
+          );
+        }
+      }
+
+      const savedUser =
+        data.user;
+
+      const savedExams =
+        Array.isArray(
+          savedUser?.exams
+        )
+          ? savedUser.exams
+          : selectedExams;
+
+      const savedSubjects =
+        Array.isArray(
+          savedUser?.subjects
+        )
+          ? savedUser.subjects
+          : selectedSubjects;
+
+      const nextActiveExam =
+        activeExam &&
+        savedExams.includes(
+          activeExam
+        )
+          ? activeExam
+          : savedExams[0] || "";
+
+      setProfile(savedUser);
+
+      setMobile(
+        savedUser?.mobile ||
+          mobile
+      );
+
+      setName(
+        savedUser?.name ||
+          cleanName
+      );
+
+      setSelectedExams(
+        savedExams
+      );
+
+      setActiveExam(
+        nextActiveExam
+      );
+
+      setSelectedSubjects(
+        savedSubjects
+      );
+
+      setDashboardSection(
+        "dashboard"
+      );
+
+      setMenuOpen(false);
+
+      setRankPredictorExam(
+        nextActiveExam
+      );
+
+      setScreen("dashboard");
+    } catch (error) {
+      console.error(
+        "Profile save error:",
+        error
+      );
+
+      alert(
+        error?.message ||
+          "Unable to save profile. Please try again."
+      );
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  /* =======================================================
+     SAVE PROFILE
+  ======================================================= */
+
+  const saveProfile = async () => {
+    const cleanName =
+      name.trim();
+
+    if (
+      !cleanName ||
+      selectedExams.length === 0 ||
+      selectedSubjects.length === 0
+    ) {
+      return;
+    }
+
+    try {
       const response =
         await fetch(
           `${API_URL}/api/profile`,
@@ -502,7 +767,15 @@ export default function App() {
                 "application/json",
             },
             body: JSON.stringify({
-              mobile,
+              mobile:
+                profile?.mobile ||
+                mobile,
+              email:
+                profile?.email ||
+                "",
+              googleId:
+                profile?.googleId ||
+                "",
               name: cleanName,
               exams:
                 selectedExams,
@@ -525,36 +798,61 @@ export default function App() {
         );
       }
 
-      setProfile(data.user);
+      const savedUser =
+        data.user;
+
+      const savedExams =
+        Array.isArray(
+          savedUser?.exams
+        )
+          ? savedUser.exams
+          : selectedExams;
+
+      const savedSubjects =
+        Array.isArray(
+          savedUser?.subjects
+        )
+          ? savedUser.subjects
+          : selectedSubjects;
+
+      const nextActiveExam =
+        activeExam &&
+        savedExams.includes(
+          activeExam
+        )
+          ? activeExam
+          : savedExams[0] || "";
+
+      setProfile(
+        savedUser
+      );
 
       setName(
-        data.user.name ||
+        savedUser.name ||
           cleanName
       );
 
       setSelectedExams(
-        Array.isArray(
-          data.user.exams
-        )
-          ? data.user.exams
-          : selectedExams
+        savedExams
+      );
+
+      setActiveExam(
+        nextActiveExam
       );
 
       setSelectedSubjects(
-        Array.isArray(
-          data.user.subjects
-        )
-          ? data.user.subjects
-          : selectedSubjects
+        savedSubjects
+      );
+
+      setRankPredictorExam(
+        nextActiveExam
       );
 
       setDashboardSection(
-        "dashboard"
+        "profile"
       );
 
       setMenuOpen(false);
-      setRankPredictorExam("");
-      setScreen("dashboard");
     } catch (error) {
       console.error(
         "Profile save error:",
@@ -565,171 +863,94 @@ export default function App() {
         error.message ||
           "Unable to save profile. Please try again."
       );
-    } finally {
-      setVerifying(false);
     }
   };
-
-  /* =======================================================
-     SAVE PROFILE
-  ======================================================= */
-
-  const saveProfile =
-    async () => {
-      const cleanName =
-        name.trim();
-
-      if (
-        !cleanName ||
-        selectedExams.length ===
-          0 ||
-        selectedSubjects.length ===
-          0
-      ) {
-        return;
-      }
-
-      try {
-        const response =
-          await fetch(
-            `${API_URL}/api/profile`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                mobile:
-                  profile?.mobile ||
-                  mobile,
-                name: cleanName,
-                exams:
-                  selectedExams,
-                subjects:
-                  selectedSubjects,
-              }),
-            }
-          );
-
-        const data =
-          await response.json();
-
-        if (
-          !response.ok ||
-          !data.success
-        ) {
-          throw new Error(
-            data.message ||
-              "Unable to save profile."
-          );
-        }
-
-        setProfile(data.user);
-
-        setName(
-          data.user.name ||
-            cleanName
-        );
-
-        setSelectedExams(
-          Array.isArray(
-            data.user.exams
-          )
-            ? data.user.exams
-            : selectedExams
-        );
-
-        setSelectedSubjects(
-          Array.isArray(
-            data.user.subjects
-          )
-            ? data.user.subjects
-            : selectedSubjects
-        );
-
-        setDashboardSection(
-          "profile"
-        );
-
-        setMenuOpen(false);
-      } catch (error) {
-        console.error(
-          "Profile save error:",
-          error
-        );
-
-        alert(
-          error.message ||
-            "Unable to save profile. Please try again."
-        );
-      }
-    };
 
   /* =======================================================
      SECTION NAVIGATION
   ======================================================= */
 
-  const openDashboardSection =
-    (
-      section,
-      examId = ""
-    ) => {
-      if (section === "menu") {
-        setMenuOpen(true);
-        return;
-      }
+  const openDashboardSection = (
+    section,
+    examId = ""
+  ) => {
+    if (examModeActive) {
+      return;
+    }
 
-      setMenuOpen(false);
+    if (section === "menu") {
+      setMenuOpen(true);
+      return;
+    }
 
-      if (
-        section ===
-        "rank-predictor"
-      ) {
-        setRankPredictorExam(
-          examId || ""
-        );
-      }
+    setMenuOpen(false);
 
-      const validSections = [
-        "dashboard",
-        "analysis",
-        "chapter-analysis",
-        "question-analysis",
-        "weakness-insights",
-        "ai-suggestions",
-        "rank-improvement",
-        "college-prediction",
-        "goal-tracker",
-        "history",
-        "retake-improvement",
-        "rank-predictor",
-        "practice",
-        "mock-tests",
-        "ai-counsellor",
-        "notifications",
-        "profile",
-        "settings",
-      ];
+    if (dashboardSection && dashboardSection !== section) {
+      setPreviousDashboardSection(dashboardSection);
+    }
 
-      if (
-        !validSections.includes(
-          section
-        )
-      ) {
-        setDashboardSection(
-          "dashboard"
-        );
+    if (
+      section ===
+      "rank-predictor"
+    ) {
+      /*
+       * Rank Predictor always starts
+       * with the active exam.
+       *
+       * Only use examId when explicitly
+       * provided by another screen.
+       */
+      const selectedRankExam =
+        examId ||
+        activeExam ||
+        selectedExams[0] ||
+        "";
 
-        return;
-      }
+      setRankPredictorExam(
+        selectedRankExam
+      );
+    }
 
-      setDashboardSection(
+    const validSections = [
+      "dashboard",
+      "analysis",
+      "chapter-analysis",
+      "question-analysis",
+      "weakness-insights",
+      "ai-suggestions",
+      "rank-improvement",
+      "college-prediction",
+      "my-colleges",
+      "goal-tracker",
+      "history",
+      "retake-improvement",
+      "rank-predictor",
+      "practice",
+      "mock-tests",
+      "ai-counsellor",
+      "notifications",
+      "profile",
+      "settings",
+    ];
+
+    if (
+      !validSections.includes(
         section
+      )
+    ) {
+      setDashboardSection(
+        "dashboard"
       );
 
-      setScreen("dashboard");
-    };
+      return;
+    }
+
+    setDashboardSection(
+      section
+    );
+
+    setScreen("dashboard");
+  };
 
   /* =======================================================
      LOGOUT
@@ -741,6 +962,7 @@ export default function App() {
     setProfile(null);
     setName("");
     setSelectedExams([]);
+    setActiveExam("");
     setSelectedSubjects([]);
     setMobile("");
     setVerifying(false);
@@ -786,19 +1008,17 @@ export default function App() {
     profileComplete:
       profile?.profileComplete ??
       (
-        selectedExams.length >
-          0 &&
-        selectedSubjects.length >
-          0 &&
+        selectedExams.length > 0 &&
+        selectedSubjects.length > 0 &&
         Boolean(
           name.trim()
         )
       ),
   };
 
-  /* =========================================================
+  /* =======================================================
      AUTH / ONBOARDING
-  ========================================================= */
+  ======================================================= */
 
   if (
     screen === "splash"
@@ -905,9 +1125,9 @@ export default function App() {
     );
   }
 
-  /* =========================================================
+  /* =======================================================
      DASHBOARD + ALL APP SCREENS
-  ========================================================= */
+  ======================================================= */
 
   if (
     screen === "dashboard"
@@ -917,7 +1137,10 @@ export default function App() {
         {/* SIDE MENU */}
 
         <SideMenu
-          open={menuOpen}
+          open={
+            menuOpen &&
+            !examModeActive
+          }
           activeSection={
             dashboardSection
           }
@@ -945,6 +1168,12 @@ export default function App() {
             <Dashboard
               profile={
                 currentProfile
+              }
+              activeExam={
+                activeExam
+              }
+              onActiveExamChange={
+                handleActiveExamChange
               }
               onOpenSection={
                 openDashboardSection
@@ -1230,6 +1459,38 @@ export default function App() {
         )}
 
         {/* =================================================
+            MY COLLEGES
+        ================================================= */}
+
+        {dashboardSection ===
+          "my-colleges" && (
+          <div className="app-shell">
+            <MyColleges
+              profile={
+                currentProfile
+              }
+              onBack={() =>
+                openDashboardSection(
+                  "college-prediction"
+                )
+              }
+              onOpenSection={
+                openDashboardSection
+              }
+            />
+
+            <BottomNavigation
+              activeSection={
+                dashboardSection
+              }
+              onNavigate={
+                openDashboardSection
+              }
+            />
+          </div>
+        )}
+
+        {/* =================================================
             GOAL TRACKER
         ================================================= */}
 
@@ -1239,6 +1500,9 @@ export default function App() {
             <GoalTracker
               profile={
                 currentProfile
+              }
+              activeExam={
+                activeExam
               }
               onBack={() =>
                 openDashboardSection(
@@ -1336,12 +1600,21 @@ export default function App() {
               profile={
                 currentProfile
               }
+              activeExam={
+                activeExam
+              }
               initialExam={
-                rankPredictorExam
+                activeExam
+              }
+              onSelectExam={
+                handleActiveExamChange
               }
               onBack={() =>
                 openDashboardSection(
-                  "dashboard"
+                  previousDashboardSection &&
+                    previousDashboardSection !== "rank-predictor"
+                    ? previousDashboardSection
+                    : "dashboard"
                 )
               }
               onOpenSection={
@@ -1411,16 +1684,21 @@ export default function App() {
               onOpenSection={
                 openDashboardSection
               }
+              onExamModeChange={
+                setExamModeActive
+              }
             />
 
-            <BottomNavigation
-              activeSection={
-                dashboardSection
-              }
-              onNavigate={
-                openDashboardSection
-              }
-            />
+            {!examModeActive && (
+              <BottomNavigation
+                activeSection={
+                  dashboardSection
+                }
+                onNavigate={
+                  openDashboardSection
+                }
+              />
+            )}
           </div>
         )}
 
@@ -1432,16 +1710,10 @@ export default function App() {
           "ai-counsellor" && (
           <div className="app-shell">
             <AICounsellor
-              profile={
-                currentProfile
-              }
               onBack={() =>
                 openDashboardSection(
                   "dashboard"
                 )
-              }
-              onOpenSection={
-                openDashboardSection
               }
             />
 

@@ -1,3081 +1,6101 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
+import {
+    Capacitor,
+    CapacitorHttp,
+} from "@capacitor/core";
+import { ScreenOrientation } from "@capacitor/screen-orientation";
 
 /* =========================================================
    ILS RANKER — MOCK TESTS
-   Production-style standalone screen
+   Full replacement
    ========================================================= */
 
 const COLORS = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  red: "#D94B55",
-  yellow: "#C78A13",
+    green: "#10E79D",
+    navy: "#FFFFFF",
+    mint: "rgba(16, 231, 157, 0.15)",
+    softMint: "rgba(16, 231, 157, 0.10)",
+    white: "rgba(255, 255, 255, 0.05)",
+    muted: "rgba(226, 232, 240, 0.65)",
+    border: "rgba(255, 255, 255, 0.12)",
+    red: "#FF5E62",
+    yellow: "#FBBF24",
+    blue: "#38BDF8",
 };
 
-/* ------------------------- ICONS ------------------------- */
+/* =========================================================
+   ICON
+   ========================================================= */
 
-function Icon({ name, size = 22, stroke = COLORS.navy }) {
-  const common = {
-    width: size,
-    height: size,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke,
-    strokeWidth: 1.9,
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-  };
+function Icon({
+    name,
+    size = 22,
+    stroke = COLORS.navy,
+}) {
+    const common = {
+        width: size,
+        height: size,
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke,
+        strokeWidth: 1.9,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+    };
 
-  const paths = {
-    back: (
-      <>
-        <path d="M19 12H5" />
-        <path d="M12 19l-7-7 7-7" />
-      </>
-    ),
-    arrow: (
-      <>
-        <path d="M5 12h14" />
-        <path d="M13 6l6 6-6 6" />
-      </>
-    ),
-    check: <path d="M5 12.5l4.2 4.2L19 7" />,
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
-    questions: (
-      <>
-        <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-        <path d="M8 8h8M8 12h8M8 16h5" />
-      </>
-    ),
-    play: <path d="M8 5.5v13L18 12 8 5.5Z" />,
-    trophy: (
-      <>
-        <path d="M8 21h8" />
-        <path d="M12 17v4" />
-        <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
-        <path d="M7 6H4v2a4 4 0 0 0 4 4" />
-        <path d="M17 6h3v2a4 4 0 0 1-4 4" />
-      </>
-    ),
-    target: (
-      <>
-        <circle cx="12" cy="12" r="8.5" />
-        <circle cx="12" cy="12" r="4.5" />
-        <circle
-          cx="12"
-          cy="12"
-          r="1.5"
-          fill={stroke}
-        />
-      </>
-    ),
-    trend: (
-      <>
-        <path d="M4 17l6-6 4 4 6-7" />
-        <path d="M16 8h4v4" />
-      </>
-    ),
-    shield: (
-      <>
-        <path d="M12 3l7 3v5c0 4.8-3 8.2-7 10-4-1.8-7-5.2-7-10V6l7-3Z" />
-        <path d="M8.5 12l2.2 2.2 4.8-5" />
-      </>
-    ),
-    info: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 10v6" />
-        <path d="M12 7h.01" />
-      </>
-    ),
-    close: (
-      <>
-        <path d="M6 6l12 12" />
-        <path d="M18 6L6 18" />
-      </>
-    ),
-  };
+    const paths = {
+        back: (
+            <>
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+            </>
+        ),
 
-  return <svg {...common}>{paths[name]}</svg>;
+        arrow: (
+            <>
+                <path d="M5 12h14" />
+                <path d="M13 6l6 6-6 6" />
+            </>
+        ),
+
+        check: (
+            <path d="M5 12.5l4.2 4.2L19 7" />
+        ),
+
+        clock: (
+            <>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+            </>
+        ),
+
+        questions: (
+            <>
+                <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+                <path d="M8 8h8M8 12h8M8 16h5" />
+            </>
+        ),
+
+        play: (
+            <path d="M8 5.5v13L18 12 8 5.5Z" />
+        ),
+
+        trophy: (
+            <>
+                <path d="M8 21h8" />
+                <path d="M12 17v4" />
+                <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+                <path d="M7 6H4v2a4 4 0 0 0 4 4" />
+                <path d="M17 6h3v2a4 4 0 0 1-4 4" />
+            </>
+        ),
+
+        target: (
+            <>
+                <circle cx="12" cy="12" r="8.5" />
+                <circle cx="12" cy="12" r="4.5" />
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="1.5"
+                    fill={stroke}
+                />
+            </>
+        ),
+
+        trend: (
+            <>
+                <path d="M4 17l6-6 4 4 6-7" />
+                <path d="M16 8h4v4" />
+            </>
+        ),
+
+        shield: (
+            <>
+                <path d="M12 3l7 3v5c0 4.8-3 8.2-7 10-4-1.8-7-5.2-7-10V6l7-3Z" />
+                <path d="M8.5 12l2.2 2.2 4.8-5" />
+            </>
+        ),
+
+        info: (
+            <>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 10v6" />
+                <path d="M12 7h.01" />
+            </>
+        ),
+
+        close: (
+            <>
+                <path d="M6 6l12 12" />
+                <path d="M18 6L6 18" />
+            </>
+        ),
+
+        home: (
+            <>
+                <path d="M3 11l9-7 9 7" />
+                <path d="M5 10v10h14V10" />
+                <path d="M9 20v-6h6v6" />
+            </>
+        ),
+    };
+
+    return (
+        <svg {...common}>
+            {paths[name]}
+        </svg>
+    );
 }
 
-/* ------------------------- DATA ------------------------- */
+/* =========================================================
+   TEST DATA
+   ========================================================= */
 
 const tests = [
-  {
-    id: "neet-full",
-    title: "NEET UG Full Mock Test",
-    number: "Mock Test 05",
-    description:
-      "Complete NEET-style test covering Physics, Chemistry and Biology.",
-    questions: 180,
-    marks: 720,
-    duration: "3 Hours",
-    difficulty: "Full Syllabus",
-    icon: "target",
-    featured: true,
-    subjects: [
-      {
-        name: "Physics",
-        questions: 45,
-        marks: 180,
-        icon: "⚛",
-        tone: "#2C77D0",
-      },
-      {
-        name: "Chemistry",
-        questions: 45,
-        marks: 180,
-        icon: "◇",
-        tone: "#D94B55",
-      },
-      {
-        name: "Biology",
-        questions: 90,
-        marks: 360,
-        icon: "✦",
-        tone: COLORS.green,
-      },
-    ],
-  },
-  {
-    id: "neet-chapter",
-    title: "NEET Chapter Test",
-    number: "Chapter Practice",
-    description:
-      "Focused chapter-wise practice for targeted revision.",
-    questions: 50,
-    marks: 200,
-    duration: "60 Min",
-    difficulty: "Chapter Wise",
-    icon: "questions",
-    subjects: [
-      {
-        name: "Physics",
-        questions: 15,
-        marks: 60,
-        icon: "⚛",
-        tone: "#2C77D0",
-      },
-      {
-        name: "Chemistry",
-        questions: 15,
-        marks: 60,
-        icon: "◇",
-        tone: "#D94B55",
-      },
-      {
-        name: "Biology",
-        questions: 20,
-        marks: 80,
-        icon: "✦",
-        tone: COLORS.green,
-      },
-    ],
-  },
-  {
-    id: "neet-pyq",
-    title: "NEET Previous Year Paper",
-    number: "PYQ Practice",
-    description:
-      "Practice with previous-year style questions.",
-    questions: 200,
-    marks: 800,
-    duration: "200 Min",
-    difficulty: "Previous Year",
-    icon: "trend",
-    subjects: [
-      {
-        name: "Physics",
-        questions: 50,
-        marks: 200,
-        icon: "⚛",
-        tone: "#2C77D0",
-      },
-      {
-        name: "Chemistry",
-        questions: 50,
-        marks: 200,
-        icon: "◇",
-        tone: "#D94B55",
-      },
-      {
-        name: "Biology",
-        questions: 100,
-        marks: 400,
-        icon: "✦",
-        tone: COLORS.green,
-      },
-    ],
-  },
-  {
-    id: "biology",
-    title: "Biology Mock Test",
-    number: "Subject Test",
-    description:
-      "High-yield Biology practice for NEET preparation.",
-    questions: 50,
-    marks: 200,
-    duration: "60 Min",
-    difficulty: "Biology",
-    icon: "shield",
-    subjects: [
-      {
-        name: "Botany",
-        questions: 25,
-        marks: 100,
-        icon: "B",
-        tone: COLORS.green,
-      },
-      {
-        name: "Zoology",
-        questions: 25,
-        marks: 100,
-        icon: "Z",
-        tone: "#2C77D0",
-      },
-    ],
-  },
-  {
-    id: "chemistry",
-    title: "Chemistry Mock Test",
-    number: "Subject Test",
-    description:
-      "Balanced Physical, Organic and Inorganic practice.",
-    questions: 50,
-    marks: 200,
-    duration: "60 Min",
-    difficulty: "Chemistry",
-    icon: "questions",
-    subjects: [
-      {
-        name: "Physical Chemistry",
-        questions: 17,
-        marks: 68,
-        icon: "P",
-        tone: "#7C5AC7",
-      },
-      {
-        name: "Organic Chemistry",
-        questions: 17,
-        marks: 68,
-        icon: "O",
-        tone: "#D94B55",
-      },
-      {
-        name: "Inorganic Chemistry",
-        questions: 16,
-        marks: 64,
-        icon: "I",
-        tone: COLORS.green,
-      },
-    ],
-  },
-  {
-    id: "physics",
-    title: "Physics Mock Test",
-    number: "Subject Test",
-    description:
-      "Build speed and accuracy with focused Physics practice.",
-    questions: 50,
-    marks: 200,
-    duration: "60 Min",
-    difficulty: "Physics",
-    icon: "target",
-    subjects: [
-      {
-        name: "Physics",
-        questions: 50,
-        marks: 200,
-        icon: "⚛",
-        tone: "#2C77D0",
-      },
-    ],
-  },
-];
+    {
+        id: "neet-full",
+        title: "NEET UG Full Mock Test",
+        number: "Mock Test 05",
+        description:
+            "Complete NEET-style test covering Physics, Chemistry and Biology.",
+        questions: 180,
+        marks: 720,
+        duration: "3 Hours",
+        difficulty: "Full Syllabus",
+        icon: "target",
+        featured: true,
+        subjects: [
+            {
+                name: "Physics",
+                questions: 45,
+                marks: 180,
+                icon: "⚛",
+                tone: COLORS.blue,
+            },
+            {
+                name: "Chemistry",
+                questions: 45,
+                marks: 180,
+                icon: "◇",
+                tone: COLORS.red,
+            },
+            {
+                name: "Biology",
+                questions: 90,
+                marks: 360,
+                icon: "✦",
+                tone: COLORS.green,
+            },
+        ],
+    },
 
-const demoQuestions = [
-  {
-    question: "The SI unit of electric current is:",
-    options: [
-      "Volt",
-      "Ampere",
-      "Ohm",
-      "Coulomb",
-    ],
-    answer: 1,
-  },
-  {
-    question:
-      "Which gas is most abundant in Earth's atmosphere?",
-    options: [
-      "Oxygen",
-      "Carbon dioxide",
-      "Nitrogen",
-      "Hydrogen",
-    ],
-    answer: 2,
-  },
-  {
-    question:
-      "The powerhouse of the cell is:",
-    options: [
-      "Nucleus",
-      "Ribosome",
-      "Mitochondria",
-      "Golgi body",
-    ],
-    answer: 2,
-  },
-  {
-    question:
-      "The pH of pure water at 25°C is:",
-    options: [
-      "5",
-      "6",
-      "7",
-      "8",
-    ],
-    answer: 2,
-  },
-  {
-    question:
-      "Which blood cells are mainly responsible for immunity?",
-    options: [
-      "RBCs",
-      "WBCs",
-      "Platelets",
-      "Plasma",
-    ],
-    answer: 1,
-  },
+    {
+        id: "neet-chapter",
+        title: "NEET Chapter Test",
+        number: "Chapter Practice",
+        description:
+            "Focused chapter-wise practice for targeted revision.",
+        questions: 50,
+        marks: 200,
+        duration: "60 Min",
+        difficulty: "Chapter Wise",
+        icon: "questions",
+        subjects: [
+            {
+                name: "Physics",
+                questions: 15,
+                marks: 60,
+                icon: "⚛",
+                tone: COLORS.blue,
+            },
+            {
+                name: "Chemistry",
+                questions: 15,
+                marks: 60,
+                icon: "◇",
+                tone: COLORS.red,
+            },
+            {
+                name: "Biology",
+                questions: 20,
+                marks: 80,
+                icon: "✦",
+                tone: COLORS.green,
+            },
+        ],
+    },
+
+    {
+        id: "neet-pyq",
+        title: "NEET Previous Year Paper",
+        number: "PYQ Practice",
+        description:
+            "Practice with previous-year style questions.",
+        questions: 200,
+        marks: 800,
+        duration: "200 Min",
+        difficulty: "Previous Year",
+        icon: "trend",
+        subjects: [
+            {
+                name: "Physics",
+                questions: 50,
+                marks: 200,
+                icon: "⚛",
+                tone: COLORS.blue,
+            },
+            {
+                name: "Chemistry",
+                questions: 50,
+                marks: 200,
+                icon: "◇",
+                tone: COLORS.red,
+            },
+            {
+                name: "Biology",
+                questions: 100,
+                marks: 400,
+                icon: "✦",
+                tone: COLORS.green,
+            },
+        ],
+    },
+
+    {
+        id: "biology",
+        title: "Biology Mock Test",
+        number: "Subject Test",
+        description:
+            "High-yield Biology practice for NEET preparation.",
+        questions: 50,
+        marks: 200,
+        duration: "60 Min",
+        difficulty: "Biology",
+        icon: "shield",
+        subjects: [
+            {
+                name: "Botany",
+                questions: 25,
+                marks: 100,
+                icon: "B",
+                tone: COLORS.green,
+            },
+            {
+                name: "Zoology",
+                questions: 25,
+                marks: 100,
+                icon: "Z",
+                tone: COLORS.blue,
+            },
+        ],
+    },
+
+    {
+        id: "chemistry",
+        title: "Chemistry Mock Test",
+        number: "Subject Test",
+        description:
+            "Balanced Physical, Organic and Inorganic practice.",
+        questions: 50,
+        marks: 200,
+        duration: "60 Min",
+        difficulty: "Chemistry",
+        icon: "questions",
+        subjects: [
+            {
+                name: "Physical Chemistry",
+                questions: 17,
+                marks: 68,
+                icon: "P",
+                tone: "#7C5AC7",
+            },
+            {
+                name: "Organic Chemistry",
+                questions: 17,
+                marks: 68,
+                icon: "O",
+                tone: COLORS.red,
+            },
+            {
+                name: "Inorganic Chemistry",
+                questions: 16,
+                marks: 64,
+                icon: "I",
+                tone: COLORS.green,
+            },
+        ],
+    },
+
+    {
+        id: "physics",
+        title: "Physics Mock Test",
+        number: "Subject Test",
+        description:
+            "Build speed and accuracy with focused Physics practice.",
+        questions: 50,
+        marks: 200,
+        duration: "60 Min",
+        difficulty: "Physics",
+        icon: "target",
+        subjects: [
+            {
+                name: "Physics",
+                questions: 50,
+                marks: 200,
+                icon: "⚛",
+                tone: COLORS.blue,
+            },
+        ],
+    },
 ];
 
 /* =========================================================
    MAIN COMPONENT
-========================================================= */
+   ========================================================= */
 
-export default function MockTests({ onBack }) {
-  const [stage, setStage] = useState("list");
-  const [selectedTest, setSelectedTest] =
-    useState(null);
-  const [activeTab, setActiveTab] =
-    useState("subjects");
+export default function MockTests({
+    profile,
+    onBack,
+    onOpenSection,
+    onExamModeChange,
+}) {
+    const API_URL =
+        import.meta.env.VITE_API_URL ||
+        "http://localhost:3000";
 
-  const [currentQuestion, setCurrentQuestion] =
-    useState(0);
+    const selectedExam = "neet";
 
-  const [answers, setAnswers] =
-    useState({});
+    const [stage, setStage] =
+        useState("list");
 
-  const [score, setScore] =
-    useState(0);
+    const [selectedTest, setSelectedTest] =
+        useState(null);
 
-  const [submitProgress, setSubmitProgress] =
-    useState(0);
+    const [activeTab, setActiveTab] =
+        useState("subjects");
 
-  const currentQuestionData =
-    demoQuestions[currentQuestion];
+    const [difficulty, setDifficulty] =
+        useState("Mixed");
 
-  const percentage = useMemo(() => {
-    return Math.round(
-      (score / demoQuestions.length) * 100
-    );
-  }, [score]);
+    const [questions, setQuestions] =
+        useState([]);
 
-  const predictedRank = useMemo(() => {
-    return Math.max(
-      1240,
-      80000 - score * 7200
-    ).toLocaleString();
-  }, [score]);
+    const [questionsLoading, setQuestionsLoading] =
+        useState(false);
 
-  const openTest = (test) => {
-    setSelectedTest(test);
-    setActiveTab("subjects");
-    setCurrentQuestion(0);
-    setAnswers({});
-    setScore(0);
-    setStage("preview");
-  };
+    const [questionsError, setQuestionsError] =
+        useState("");
 
-  const startTest = () => {
-    setStage("test");
-  };
+    const [currentQuestion, setCurrentQuestion] =
+        useState(0);
 
-  const chooseAnswer = (index) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion]: index,
-    }));
-  };
+    const [answers, setAnswers] =
+        useState({});
 
-  const calculateScore = () => {
-    let correct = 0;
+    const [markedQuestions, setMarkedQuestions] =
+        useState([]);
 
-    demoQuestions.forEach(
-      (question, index) => {
-        if (
-          answers[index] ===
-          question.answer
-        ) {
-          correct += 1;
+    const [timeLeft, setTimeLeft] =
+        useState(0);
+
+    const [submitProgress, setSubmitProgress] =
+        useState(0);
+
+    const [submissionError, setSubmissionError] =
+        useState("");
+
+    const [resultData, setResultData] =
+        useState(null);
+
+    const [isSubmitting, setIsSubmitting] =
+        useState(false);
+
+    const [examViolationCount, setExamViolationCount] =
+        useState(0);
+
+    const [examWarning, setExamWarning] =
+        useState("");
+
+    const [bookmarkIds, setBookmarkIds] =
+        useState(() => new Set());
+
+    const submissionStartedRef =
+        useRef(false);
+
+    const examModeChangeRef =
+        useRef(onExamModeChange);
+
+    useEffect(() => {
+        examModeChangeRef.current =
+            onExamModeChange;
+    }, [onExamModeChange]);
+
+    const examModeActive =
+        stage === "test";
+
+    const currentQuestionData =
+        Array.isArray(questions) &&
+            currentQuestion >= 0 &&
+            currentQuestion < questions.length
+            ? questions[currentQuestion]
+            : null;
+
+    const loadBookmarkIds = async () => {
+        const params = new URLSearchParams();
+        if (profile?.mobile) params.set("mobile", profile.mobile);
+        if (profile?.email) params.set("email", profile.email);
+        if (profile?.googleId) params.set("googleId", profile.googleId);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/bookmarks?${params.toString()}`
+            );
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data?.success) return;
+            setBookmarkIds(
+                new Set(
+                    (data.bookmarks || []).map((bookmark) =>
+                        String(bookmark.questionId)
+                    )
+                )
+            );
+        } catch (error) {
+            if (import.meta.env.DEV) {
+                console.warn("Mock bookmark loading failed:", error);
+            }
         }
-      }
-    );
-
-    return correct;
-  };
-
-  const submitTest = () => {
-    const result = calculateScore();
-
-    setScore(result);
-    setSubmitProgress(0);
-    setStage("submission");
-  };
-
-  const nextQuestion = () => {
-    if (
-      currentQuestion <
-      demoQuestions.length - 1
-    ) {
-      setCurrentQuestion(
-        (prev) => prev + 1
-      );
-      return;
-    }
-
-    submitTest();
-  };
-
-  useEffect(() => {
-    if (stage !== "submission") {
-      return;
-    }
-
-    setSubmitProgress(0);
-
-    const interval = setInterval(() => {
-      setSubmitProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-
-        return prev + 4;
-      });
-    }, 45);
-
-    const timeout = setTimeout(() => {
-      setStage("result");
-    }, 1500);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
     };
-  }, [stage]);
 
-  const resetTests = () => {
-    setStage("list");
-    setSelectedTest(null);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setScore(0);
-    setSubmitProgress(0);
-  };
+    const toggleQuestionBookmark = async () => {
+        const questionId = String(
+            currentQuestionData?.questionId || ""
+        );
+        if (!questionId) return;
 
-  /* =======================================================
-     LIST SCREEN
-  ======================================================= */
+        const isBookmarked = bookmarkIds.has(questionId);
 
-  if (stage === "list") {
-    return (
-      <Page>
-        <Header onBack={onBack} />
-
-        <main style={styles.container}>
-          <div style={styles.kicker}>
-            TEST CENTER
-          </div>
-
-          <h1 style={styles.pageTitle}>
-            Mock Tests
-          </h1>
-
-          <p style={styles.pageSubtitle}>
-            Simulate the real exam environment,
-            improve your accuracy and measure
-            your preparation.
-          </p>
-
-          <div style={styles.featuredCard}>
-            <div style={styles.featuredTop}>
-              <div
-                style={
-                  styles.featuredIcon
+        try {
+            const response = await fetch(
+                `${API_URL}/api/bookmarks`,
+                {
+                    method: isBookmarked ? "DELETE" : "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        mobile: profile?.mobile || "",
+                        email: profile?.email || "",
+                        googleId: profile?.googleId || "",
+                        questionId,
+                        exam: selectedExam,
+                    }),
                 }
-              >
-                <Icon
-                  name="target"
-                  size={26}
-                  stroke={COLORS.green}
-                />
-              </div>
-
-              <span
-                style={
-                  styles.featuredBadge
-                }
-              >
-                RECOMMENDED
-              </span>
-            </div>
-
-            <div
-              style={
-                styles.featuredTitle
-              }
-            >
-              Full Syllabus Mock
-            </div>
-
-            <div
-              style={
-                styles.featuredDescription
-              }
-            >
-              Complete exam simulation with
-              performance analysis and estimated
-              rank.
-            </div>
-
-            <div
-              style={
-                styles.featuredStats
-              }
-            >
-              <Stat
-                icon="questions"
-                text="180 Questions"
-              />
-
-              <Stat
-                icon="clock"
-                text="180 Minutes"
-              />
-
-              <Stat
-                icon="trophy"
-                text="720 Marks"
-              />
-            </div>
-
-            <button
-              type="button"
-              style={
-                styles.featuredButton
-              }
-              onClick={() =>
-                openTest(tests[0])
-              }
-            >
-              <span>Take Test</span>
-
-              <Icon
-                name="arrow"
-                size={18}
-                stroke="#FFFFFF"
-              />
-            </button>
-          </div>
-
-          <div
-            style={
-              styles.sectionHeader
+            );
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data?.success) {
+                throw new Error(
+                    data?.message || "Unable to update bookmark."
+                );
             }
-          >
-            <h2
-              style={
-                styles.sectionTitle
-              }
-            >
-              Available Tests
-            </h2>
+            setBookmarkIds((previous) => {
+                const next = new Set(previous);
+                if (isBookmarked) next.delete(questionId);
+                else next.add(questionId);
+                return next;
+            });
+        } catch (error) {
+            setExamWarning(
+                error.message || "Unable to update bookmark."
+            );
+        }
+    };
 
-            <span
-              style={
-                styles.sectionCount
-              }
-            >
-              {tests.length} Tests
-            </span>
-          </div>
+    const enterExamDisplay = async () => {
+        const platform = Capacitor.getPlatform();
 
-          {tests.slice(1).map(
-            (test) => (
-              <TestCard
-                key={test.id}
-                test={test}
-                onClick={() =>
-                  openTest(test)
+        if (platform === "web") {
+            try {
+                if (
+                    !document.fullscreenElement &&
+                    document.documentElement.requestFullscreen
+                ) {
+                    await document.documentElement.requestFullscreen();
                 }
-              />
+            } catch (error) {
+                console.warn(
+                    "Unable to enter fullscreen exam display:",
+                    error
+                );
+            }
+
+            try {
+                await screen.orientation?.lock?.("portrait");
+            } catch (error) {
+                console.warn(
+                    "Unable to lock web exam orientation:",
+                    error
+                );
+            }
+
+            return;
+        }
+
+        try {
+            await ScreenOrientation.lock({
+                orientation: "portrait",
+            });
+        } catch (error) {
+            console.warn(
+                "Unable to lock exam orientation:",
+                error
+            );
+        }
+    };
+
+    const exitExamDisplay = async () => {
+        if (Capacitor.getPlatform() === "web") {
+            try {
+                if (
+                    document.fullscreenElement &&
+                    document.exitFullscreen
+                ) {
+                    await document.exitFullscreen();
+                }
+            } catch (error) {
+                console.warn(
+                    "Unable to exit fullscreen exam display:",
+                    error
+                );
+            }
+
+            try {
+                await screen.orientation?.unlock?.();
+            } catch (error) {
+                console.warn(
+                    "Unable to restore web exam orientation:",
+                    error
+                );
+            }
+
+            return;
+        }
+
+        try {
+            await ScreenOrientation.unlock();
+        } catch (error) {
+            console.warn(
+                "Unable to restore exam orientation:",
+                error
+            );
+        }
+    };
+
+    useEffect(() => {
+        examModeChangeRef.current?.(
+            examModeActive
+        );
+
+        if (!examModeActive) {
+            void exitExamDisplay();
+            return undefined;
+        }
+
+        void enterExamDisplay();
+        setExamWarning("");
+
+        const flagViolation = () => {
+            setExamViolationCount((previous) => {
+                const next = previous + 1;
+
+                setExamWarning(
+                    next === 1
+                        ? "You left Exam Mode. Please stay on this test screen."
+                        : `Exam Mode violation ${next}: please do not leave the test.`
+                );
+
+                return next;
+            });
+        };
+
+        const handleVisibilityChange = () => {
+            if (
+                document.visibilityState ===
+                "visible"
+            ) {
+                flagViolation();
+            }
+        };
+
+        const platform = Capacitor.getPlatform();
+        let backListener;
+        let appStateListener;
+        let historyEntryAdded = false;
+
+        const handleBrowserBack = () => {
+            window.history.pushState(
+                {
+                    ...(window.history.state || {}),
+                    ilsExamMode: true,
+                },
+                "",
+                window.location.href
+            );
+            setExamWarning(
+                "Exam Mode is active. Use Submit Test to finish the test."
+            );
+        };
+
+        if (platform === "web") {
+            window.history.pushState(
+                {
+                    ...(window.history.state || {}),
+                    ilsExamMode: true,
+                },
+                "",
+                window.location.href
+            );
+            historyEntryAdded = true;
+            window.addEventListener(
+                "popstate",
+                handleBrowserBack
+            );
+        }
+
+        if (platform === "web") {
+            document.addEventListener(
+                "visibilitychange",
+                handleVisibilityChange
+            );
+        } else {
+            backListener = CapacitorApp.addListener(
+                "backButton",
+                () => {
+                    setExamWarning(
+                        "Exam Mode is active. Use the on-screen back button to leave the test."
+                    );
+                }
+            );
+
+            appStateListener = CapacitorApp.addListener(
+                "appStateChange",
+                ({ isActive }) => {
+                    if (isActive) {
+                        flagViolation();
+                    }
+                }
+            );
+        }
+
+        return () => {
+            if (platform === "web") {
+                document.removeEventListener(
+                    "visibilitychange",
+                    handleVisibilityChange
+                );
+                window.removeEventListener(
+                    "popstate",
+                    handleBrowserBack
+                );
+
+                if (historyEntryAdded) {
+                    window.history.back();
+                }
+            }
+            backListener?.then((listener) =>
+                listener.remove()
+            );
+            appStateListener?.then((listener) =>
+                listener.remove()
+            );
+            void exitExamDisplay();
+            examModeChangeRef.current?.(false);
+        };
+    }, [examModeActive]);
+
+    /* =======================================================
+       RESULT DATA
+       ======================================================= */
+
+    const resultCorrect = Number(
+        resultData?.correct ??
+        resultData?.result?.correct ??
+        0
+    );
+
+    const resultIncorrect = Number(
+        resultData?.incorrect ??
+        resultData?.result?.incorrect ??
+        0
+    );
+
+    const resultSkipped = Number(
+        resultData?.skipped ??
+        resultData?.result?.skipped ??
+        0
+    );
+
+    const resultScore = Number(
+        resultData?.score ??
+        resultData?.result?.score ??
+        0
+    );
+
+    const resultAccuracy = Number(
+        resultData?.accuracy ??
+        resultData?.result?.accuracy ??
+        0
+    );
+
+    const resultTotalQuestions = Number(
+        resultData?.totalQuestions ??
+        resultData?.result?.totalQuestions ??
+        questions.length
+    );
+
+    /* =======================================================
+       NORMALIZE
+       ======================================================= */
+
+    const normalizeQuestions = (items) => {
+        if (!Array.isArray(items)) {
+            return [];
+        }
+
+        return items
+            .filter(
+                (item) =>
+                    item &&
+                    typeof item === "object"
             )
-          )}
+            .map((item) => {
+                let rawOptions = [];
 
-          <div
-            style={
-              styles.tipCard
+                if (Array.isArray(item?.options)) {
+                    rawOptions = item.options;
+                } else if (
+                    item?.options &&
+                    typeof item.options === "object"
+                ) {
+                    rawOptions = Object.entries(
+                        item.options
+                    ).map(([key, value]) => ({
+                        key,
+                        text: value,
+                    }));
+                }
+
+                const normalizedOptions = rawOptions
+                    .map((option, index) => {
+                        const fallbackKey =
+                            String.fromCharCode(
+                                65 + index
+                            );
+
+                        if (
+                            option &&
+                            typeof option === "object"
+                        ) {
+                            return {
+                                key: String(
+                                    option.key ||
+                                    fallbackKey
+                                ).toUpperCase(),
+                                text: String(
+                                    option.text ??
+                                    option.value ??
+                                    ""
+                                ),
+                            };
+                        }
+
+                        return {
+                            key: fallbackKey,
+                            text: String(option ?? ""),
+                        };
+                    })
+                    .filter(
+                        (option) =>
+                            option.text.trim()
+                    );
+
+                const questionId = String(
+                    item?.questionId ??
+                    item?.id ??
+                    item?._id ??
+                    ""
+                );
+
+                return {
+                    ...item,
+
+                    questionId,
+
+                    id: String(
+                        item?.id ??
+                        item?._id ??
+                        questionId ??
+                        ""
+                    ),
+
+                    question: String(
+                        item?.questionText ??
+                        item?.question ??
+                        ""
+                    ),
+
+                    options: normalizedOptions,
+
+                    subjectId: String(
+                        item?.subjectId || ""
+                    ),
+
+                    subjectName: String(
+                        item?.subjectName || ""
+                    ),
+
+                    chapterId: String(
+                        item?.chapterId || ""
+                    ),
+
+                    chapterName: String(
+                        item?.chapterName || ""
+                    ),
+
+                    difficulty: String(
+                        item?.difficulty || "Easy"
+                    ),
+                };
+            })
+            .filter(
+                (item) =>
+                    item.questionId &&
+                    item.question &&
+                    item.options.length >= 2
+            );
+    };
+    /* =======================================================
+       SHUFFLE
+       ======================================================= */
+
+    const shuffle = (items) => {
+        const copy = [...items];
+
+        for (
+            let i = copy.length - 1;
+            i > 0;
+            i--
+        ) {
+            const j = Math.floor(
+                Math.random() * (i + 1)
+            );
+
+            [
+                copy[i],
+                copy[j],
+            ] = [
+                    copy[j],
+                    copy[i],
+                ];
+        }
+
+        return copy;
+    };
+
+    /* =======================================================
+       API GET
+       ======================================================= */
+
+    const getQuestionsFromAPI =
+        async ({
+            subject = "",
+            limit = 20,
+            selectedDifficulty = "Mixed",
+            testId = "",
+        }) => {
+            const params =
+                new URLSearchParams();
+
+            params.set(
+                "exam",
+                selectedExam
+            );
+
+            if (subject) {
+                params.set(
+                    "subject",
+                    subject
+                );
             }
-          >
-            <div
-              style={styles.tipIcon}
-            >
-              <Icon
-                name="trend"
-                size={20}
-                stroke={COLORS.green}
-              />
-            </div>
 
-            <div
-              style={{
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={styles.tipTitle}
-              >
-                Practice strategically
-              </div>
+            if (testId) {
+                params.set(
+                    "testId",
+                    testId
+                );
+            }
 
-              <div
-                style={styles.tipText}
-              >
-                Take regular mock tests to improve
-                speed, accuracy and exam temperament.
-              </div>
-            </div>
-          </div>
-        </main>
-      </Page>
-    );
-  }
+            params.set(
+                "difficulty",
+                selectedDifficulty
+            );
 
-  /* =======================================================
-     PREVIEW / TAKE A TEST
-  ======================================================= */
+            params.set(
+                "limit",
+                String(limit)
+            );
+            if (import.meta.env.DEV) {
+                params.set("allowPartial", "true");
+            }
+            const url =
+                `${API_URL}/api/practice/questions?` +
+                params.toString();
 
-  if (
-    stage === "preview" &&
-    selectedTest
-  ) {
-    return (
-      <Page>
-        <Header
-          onBack={() => {
-            setSelectedTest(null);
-            setStage("list");
-          }}
-        />
+            const platform =
+                Capacitor.getPlatform();
 
-        <main style={styles.container}>
-          <div
-            style={styles.breadcrumb}
-          >
-            <span>Mock Tests</span>
-            <span>›</span>
-            <strong>
-              Take a Test
-            </strong>
-          </div>
+            /* WEB */
+            if (
+                platform === "web"
+            ) {
+                const response =
+                    await fetch(url);
 
-          <div
-            style={styles.testHero}
-          >
-            <div
-              style={
-                styles.testHeroIcon
-              }
-            >
-              <Icon
-                name={selectedTest.icon}
-                size={27}
-                stroke={COLORS.green}
-              />
-            </div>
+                const data =
+                    await response
+                        .json()
+                        .catch(
+                            () => ({})
+                        );
 
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={
-                  styles.testHeroEyebrow
+                if (
+                    !response.ok ||
+                    !data?.success
+                ) {
+                    throw new Error(
+                        data?.message ||
+                        "Unable to load questions."
+                    );
                 }
-              >
-                {selectedTest.number}
-              </div>
 
-              <h1
-                style={
-                  styles.testHeroTitle
+                if (!Array.isArray(data.questions)) {
+                    throw new Error(
+                        "The question service returned an invalid response."
+                    );
                 }
-              >
-                {selectedTest.title}
-              </h1>
 
-              <p
-                style={
-                  styles.testHeroDescription
-                }
-              >
-                {selectedTest.description}
-              </p>
-            </div>
-          </div>
+                return normalizeQuestions(
+                    data.questions
+                );
+            }
 
-          <div
-            style={styles.metaGrid}
-          >
-            <MetaBox
-              icon="questions"
-              label="Questions"
-              value={
-                selectedTest.questions
-              }
-            />
+            /* ANDROID / NATIVE */
+            const response =
+                await CapacitorHttp.get({
+                    url,
+                });
 
-            <MetaBox
-              icon="clock"
-              label="Duration"
-              value={
-                selectedTest.duration
-              }
-            />
+            const data =
+                response?.data || {};
 
-            <MetaBox
-              icon="trophy"
-              label="Maximum"
-              value={`${selectedTest.marks} Marks`}
-            />
-          </div>
+            if (
+                response?.status < 200 ||
+                response?.status >= 300 ||
+                !data?.success
+            ) {
+                throw new Error(
+                    data?.message ||
+                    "Unable to load questions."
+                );
+            }
 
-          <div style={styles.tabs}>
-            <button
-              type="button"
-              style={{
-                ...styles.tab,
-                ...(activeTab ===
+            if (!Array.isArray(data.questions)) {
+                throw new Error(
+                    "The question service returned an invalid response."
+                );
+            }
+
+            return normalizeQuestions(
+                data.questions
+            );
+        };
+
+    /* =======================================================
+       LOAD SUBJECT
+       ======================================================= */
+
+    const loadSubjectQuestions =
+        async (
+            subject,
+            count,
+            selectedDifficulty
+        ) => {
+            return getQuestionsFromAPI({
+                subject,
+                limit: count,
+                selectedDifficulty,
+            });
+        };
+
+    /* =======================================================
+       LOAD TEST QUESTIONS
+       ======================================================= */
+
+    const loadTestQuestions =
+        async (
+            test,
+            selectedDifficulty
+        ) => {
+            /*
+             * NEET FULL MOCK
+             *
+             * Always request subject-wise.
+             * This allows the app to maintain
+             * 45 Physics + 45 Chemistry +
+             * 90 Biology without needing
+             * pre-assigned full-mock documents.
+             */
+
+            if (
+                test.id === "neet-full"
+            ) {
+                const [
+                    physics,
+                    chemistry,
+                    biology,
+                ] = await Promise.all([
+                    loadSubjectQuestions(
+                        "physics",
+                        45,
+                        selectedDifficulty
+                    ),
+
+                    loadSubjectQuestions(
+                        "chemistry",
+                        45,
+                        selectedDifficulty
+                    ),
+
+                    loadSubjectQuestions(
+                        "biology",
+                        90,
+                        selectedDifficulty
+                    ),
+                ]);
+
+                /*
+                 * Remove duplicate IDs
+                 * before combining.
+                 */
+
+                const map =
+                    new Map();
+
+                [
+                    ...physics,
+                    ...chemistry,
+                    ...biology,
+                ].forEach(
+                    (question) => {
+                        if (
+                            !map.has(
+                                question.questionId ||
+                                question.id
+                            )
+                        ) {
+                            map.set(
+                                question.questionId ||
+                                question.id,
+                                question
+                            );
+                        }
+                    }
+                );
+
+                /*
+                 * Randomize the final paper
+                 * so subjects are mixed.
+                 */
+
+                return shuffle([
+                    ...map.values(),
+                ]);
+            }
+
+            /*
+             * SUBJECT TESTS
+             */
+
+            if (
+                test.id ===
+                "biology"
+            ) {
+                return loadSubjectQuestions(
+                    "biology",
+                    50,
+                    selectedDifficulty
+                );
+            }
+
+            if (
+                test.id ===
+                "chemistry"
+            ) {
+                return loadSubjectQuestions(
+                    "chemistry",
+                    50,
+                    selectedDifficulty
+                );
+            }
+
+            if (
+                test.id ===
+                "physics"
+            ) {
+                return loadSubjectQuestions(
+                    "physics",
+                    50,
+                    selectedDifficulty
+                );
+            }
+
+            /*
+             * Chapter / PYQ for now:
+             * use the NEET question bank
+             * with random selection.
+             */
+
+            return getQuestionsFromAPI({
+                limit:
+                    test.questions || 50,
+
+                selectedDifficulty,
+            });
+        };
+
+    /* =======================================================
+       RESET
+       ======================================================= */
+
+    const resetAttemptState = () => {
+        setCurrentQuestion(0);
+        setAnswers({});
+        setMarkedQuestions([]);
+        setTimeLeft(0);
+        setSubmitProgress(0);
+        setSubmissionError("");
+        setResultData(null);
+        setIsSubmitting(false);
+        submissionStartedRef.current = false;
+    };
+
+    /* =======================================================
+       OPEN TEST
+       ======================================================= */
+
+    const openTest =
+        async (test) => {
+            setSelectedTest(test);
+
+            setActiveTab(
                 "subjects"
-                  ? styles.activeTab
-                  : {}),
-              }}
-              onClick={() =>
-                setActiveTab(
-                  "subjects"
-                )
-              }
-            >
-              Subjects
-            </button>
+            );
 
-            <button
-              type="button"
-              style={{
-                ...styles.tab,
-                ...(activeTab ===
-                "instructions"
-                  ? styles.activeTab
-                  : {}),
-              }}
-              onClick={() =>
-                setActiveTab(
-                  "instructions"
-                )
-              }
-            >
-              Instructions
-            </button>
-          </div>
+            setDifficulty(
+                "Mixed"
+            );
 
-          {activeTab ===
-          "subjects" ? (
-            <div
-              style={styles.panel}
-            >
-              <div
-                style={
-                  styles.panelHeader
+            resetAttemptState();
+
+            setQuestions([]);
+
+            setQuestionsError("");
+
+            setQuestionsLoading(
+                true
+            );
+
+            setStage("preview");
+
+            try {
+                const loaded =
+                    await loadTestQuestions(
+                        test,
+                        "Mixed"
+                    );
+
+                setQuestions(
+                    loaded
+                );
+                void loadBookmarkIds();
+
+                if (
+                    loaded.length === 0
+                ) {
+                    setQuestionsError(
+                        "No active questions are available in MongoDB for this test yet."
+                    );
                 }
-              >
-                <div>
-                  <h2
-                    style={
-                      styles.panelTitle
-                    }
-                  >
-                    Test Structure
-                  </h2>
+            } catch (error) {
+                console.error(
+                    "Question loading error:",
+                    error
+                );
 
-                  <p
-                    style={
-                      styles.panelSubtitle
-                    }
-                  >
-                    Questions included in this
-                    test
-                  </p>
-                </div>
+                setQuestionsError(
+                    error?.message ||
+                    "Unable to load questions."
+                );
+            } finally {
+                setQuestionsLoading(
+                    false
+                );
+            }
+        };
 
-                <span
-                  style={
-                    styles.panelBadge
-                  }
-                >
-                  {selectedTest.difficulty}
-                </span>
-              </div>
+    /* =======================================================
+       CHANGE DIFFICULTY
+       ======================================================= */
 
-              <div
-                style={
-                  styles.subjectList
+    const changeDifficulty =
+        async (
+            nextDifficulty
+        ) => {
+            if (
+                !selectedTest ||
+                questionsLoading ||
+                isSubmitting
+            ) {
+                return;
+            }
+
+            setDifficulty(
+                nextDifficulty
+            );
+
+            setQuestionsLoading(
+                true
+            );
+
+            setQuestionsError("");
+
+            setQuestions([]);
+
+            setCurrentQuestion(0);
+
+            setAnswers({});
+
+            try {
+                const loaded =
+                    await loadTestQuestions(
+                        selectedTest,
+                        nextDifficulty
+                    );
+
+                setQuestions(
+                    loaded
+                );
+
+                if (
+                    loaded.length === 0
+                ) {
+                    setQuestionsError(
+                        `No ${nextDifficulty.toLowerCase()} questions are currently available in MongoDB.`
+                    );
                 }
-              >
-                {selectedTest.subjects.map(
-                  (subject, index) => (
-                    <div
-                      key={
-                        subject.name
-                      }
-                      style={{
-                        ...styles.subjectItem,
-                        borderBottom:
-                          index ===
-                          selectedTest
-                            .subjects
-                            .length -
-                            1
-                            ? "none"
-                            : `1px solid ${COLORS.border}`,
-                      }}
-                    >
-                      <div
-                        style={{
-                          ...styles.subjectAvatar,
-                          color:
-                            subject.tone,
-                          background:
-                            subject.tone ===
-                            COLORS.green
-                              ? COLORS.mint
-                              : "#F6F8FA",
-                        }}
-                      >
+            } catch (error) {
+                console.error(
+                    "Difficulty load error:",
+                    error
+                );
+
+                setQuestionsError(
+                    error?.message ||
+                    "Unable to load questions."
+                );
+            } finally {
+                setQuestionsLoading(
+                    false
+                );
+            }
+        };
+
+    /* =======================================================
+       START TEST
+       ======================================================= */
+
+    /* =======================================================
+     START TEST
+     ======================================================= */
+
+    const startTest = () => {
+        if (
+            !selectedTest ||
+            questionsLoading ||
+            isSubmitting ||
+            questions.length === 0
+        ) {
+            return;
+        }
+
+        setCurrentQuestion(0);
+        setAnswers({});
+        setResultData(null);
+        setSubmissionError("");
+
+        if (
+            !Array.isArray(questions) ||
+            questions.length === 0
+        ) {
+            setQuestionsError(
+                "Question set is not ready. Please wait for questions to finish loading."
+            );
+            return;
+        }
+
+        const duration = String(
+            selectedTest.duration || "60 Min"
+        );
+
+        const hourMatch = duration.match(
+            /(\d+)\s*(Hour|Hours)/i
+        );
+
+        const minMatch = duration.match(
+            /(\d+)\s*(Min|Minutes)/i
+        );
+
+        let seconds = 60 * 60;
+
+        if (hourMatch) {
+            seconds =
+                Number(hourMatch[1]) *
+                60 *
+                60;
+        } else if (minMatch) {
+            seconds =
+                Number(minMatch[1]) *
+                60;
+        }
+
+        setTimeLeft(seconds);
+        setStage("test");
+    };
+
+    /* =======================================================
+       SELECT ANSWER
+       ======================================================= */
+
+    const chooseAnswer =
+        (optionKey) => {
+            if (
+                !currentQuestionData ||
+                isSubmitting
+            ) {
+                return;
+            }
+
+            setAnswers(
+                (previous) => ({
+                    ...previous,
+                    [currentQuestion]:
+                        optionKey,
+                })
+            );
+        };
+
+    const toggleMarkForReview = () => {
+        if (
+            !currentQuestionData ||
+            isSubmitting
+        ) {
+            return;
+        }
+
+        setMarkedQuestions((previous) =>
+            previous.includes(currentQuestion)
+                ? previous.filter(
+                    (index) =>
+                        index !== currentQuestion
+                )
+                : [...previous, currentQuestion]
+        );
+    };
+
+    const isCurrentMarked =
+        markedQuestions.includes(currentQuestion);
+
+    const goToQuestion = (index) => {
+        if (
+            stage !== "test" ||
+            isSubmitting ||
+            !Array.isArray(questions) ||
+            index < 0 ||
+            index >= questions.length
+        ) {
+            return;
+        }
+
+        setCurrentQuestion(index);
+    };
+
+    /* =======================================================
+       SUBMIT SERVER
+       ======================================================= */
+
+    const submitAnswersToServer =
+        async () => {
+            if (
+                !selectedTest ||
+                questions.length === 0
+            ) {
+                throw new Error(
+                    "There are no questions to submit."
+                );
+            }
+
+            // Compute subjectResults and chapterResults from questions and answers
+            const subjectMap = new Map();
+            const chapterMap = new Map();
+
+            questions.forEach((q, index) => {
+                const subId = String(q.subjectId || q.subject || q.subjectName || selectedTest?.id || "general").toLowerCase().trim();
+                const subName = q.subjectName || q.subject || (subId.charAt(0).toUpperCase() + subId.slice(1));
+                const chapId = String(q.chapterId || q.chapter || q.chapterName || "general").trim();
+                const chapName = q.chapterName || q.chapter || chapId;
+
+                if (!subjectMap.has(subId)) {
+                    subjectMap.set(subId, {
+                        subjectId: subId,
+                        subjectName: subName,
+                        totalQuestions: 0,
+                        attempted: 0,
+                        correct: 0,
+                        incorrect: 0,
+                        skipped: 0,
+                        score: 0,
+                        accuracy: 0,
+                    });
+                }
+                const subStat = subjectMap.get(subId);
+                subStat.totalQuestions += 1;
+
+                const chapKey = `${subId}:${chapId}`;
+                if (!chapterMap.has(chapKey)) {
+                    chapterMap.set(chapKey, {
+                        subjectId: subId,
+                        chapterId: chapId,
+                        chapterName: chapName,
+                        totalQuestions: 0,
+                        attempted: 0,
+                        correct: 0,
+                        incorrect: 0,
+                        skipped: 0,
+                        score: 0,
+                        accuracy: 0,
+                    });
+                }
+                const chapStat = chapterMap.get(chapKey);
+                chapStat.totalQuestions += 1;
+
+                const selectedAns = answers[index];
+                const isSkipped = selectedAns === undefined || selectedAns === null || selectedAns === "";
+                if (isSkipped) {
+                    subStat.skipped += 1;
+                    chapStat.skipped += 1;
+                } else {
+                    subStat.attempted += 1;
+                    chapStat.attempted += 1;
+                    const isCorrect = String(q.correctAnswer || "").trim().toUpperCase() === String(selectedAns).trim().toUpperCase();
+                    const marks = Number(q.marks || 4);
+                    const neg = Number(q.negativeMarks || 1);
+                    if (isCorrect) {
+                        subStat.correct += 1;
+                        subStat.score += marks;
+                        chapStat.correct += 1;
+                        chapStat.score += marks;
+                    } else {
+                        subStat.incorrect += 1;
+                        subStat.score -= neg;
+                        chapStat.incorrect += 1;
+                        chapStat.score -= neg;
+                    }
+                }
+            });
+
+            const subjectResults = Array.from(subjectMap.values()).map((s) => ({
+                ...s,
+                accuracy: s.attempted > 0 ? Math.round((s.correct / s.attempted) * 100) : 0,
+            }));
+
+            const chapterResults = Array.from(chapterMap.values()).map((c) => ({
+                ...c,
+                accuracy: c.attempted > 0 ? Math.round((c.correct / c.attempted) * 100) : 0,
+            }));
+
+            const payload = {
+                mobile:
+                    profile?.mobile ||
+                    "",
+
+                email:
+                    profile?.email ||
+                    "",
+
+                googleId:
+                    profile?.googleId ||
+                    "",
+
+                testId:
+                    selectedTest.id,
+
+                testTitle:
+                    selectedTest.title,
+
+                exam:
+                    selectedExam,
+                answers: questions.map(
+                    (question, index) => {
+                        const questionId = String(
+                            question.questionId ||
+                            question.id ||
+                            ""
+                        );
+
+                        return {
+                            questionId,
+                            selectedAnswer:
+                                answers[index] ?? null,
+                        };
+                    }
+                ),
+                subjectResults,
+                chapterResults,
+            };
+
+            const url =
+                `${API_URL}/api/test-results`;
+
+            const platform =
+                Capacitor.getPlatform();
+
+            let status = 0;
+            let data = {};
+
+            /* WEB */
+            if (
+                platform === "web"
+            ) {
+                let response;
+
+                try {
+                    response =
+                        await fetch(url, {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    payload
+                                ),
+                        });
+                } catch (error) {
+                    if (import.meta.env.DEV) {
+                        console.error(
+                            "Test-result network failure:",
+                            {
+                                url,
+                                error,
+                            }
+                        );
+                    }
+
+                    throw new Error(
+                        `Unable to reach the result server at ${url}. Check that the backend is running and reachable from this device.`
+                    );
+                }
+
+                status = response.status;
+
+                const responseText =
+                    await response.text();
+
+                try {
+                    data = responseText
+                        ? JSON.parse(responseText)
+                        : {};
+                } catch {
+                    data = {};
+                }
+
+                if (import.meta.env.DEV) {
+                    console.debug(
+                        "Test-result response:",
                         {
-                          subject.icon
+                            url,
+                            status,
+                            body: responseText,
                         }
-                      </div>
+                    );
+                }
+            }
 
-                      <div
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        <div
-                          style={
-                            styles.subjectName
-                          }
-                        >
-                          {subject.name}
-                        </div>
+            /* ANDROID */
+            else {
+                const response =
+                    await CapacitorHttp.post(
+                        {
+                            url,
 
-                        <div
-                          style={
-                            styles.subjectMeta
-                          }
-                        >
-                          {
-                            subject.questions
-                          }{" "}
-                          Questions
-                          <span>
-                            {" • "}
-                          </span>
-                          {
-                            subject.marks
-                          }{" "}
-                          Marks
-                        </div>
-                      </div>
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+                            },
 
-                      <div
-                        style={
-                          styles.checkCircle
+                            data: payload,
                         }
-                      >
-                        <Icon
-                          name="check"
-                          size={16}
-                          stroke="#FFFFFF"
-                        />
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-          ) : (
-            <div
-              style={styles.panel}
-            >
-              <div
-                style={
-                  styles.panelHeader
+                    );
+
+                status =
+                    response?.status ||
+                    0;
+
+                data =
+                    response?.data || {};
+
+                if (import.meta.env.DEV) {
+                    console.debug(
+                        "Test-result response:",
+                        {
+                            url,
+                            status,
+                            body: data,
+                        }
+                    );
                 }
-              >
-                <div>
-                  <h2
-                    style={
-                      styles.panelTitle
-                    }
-                  >
-                    Test Instructions
-                  </h2>
+            }
 
-                  <p
-                    style={
-                      styles.panelSubtitle
-                    }
-                  >
-                    Please read before starting
-                  </p>
-                </div>
+            if (
+                status < 200 ||
+                status >= 300 ||
+                data?.success !==
+                true
+            ) {
+                throw new Error(
+                    data?.message ||
+                    `Result server returned HTTP ${status}.`
+                );
+            }
 
-                <div
-                  style={
-                    styles.infoCircle
-                  }
-                >
-                  <Icon
-                    name="info"
-                    size={17}
-                    stroke={COLORS.green}
-                  />
-                </div>
-              </div>
+            return (
+                data?.result ||
+                data?.data ||
+                data
+            );
+        };
 
-              <Instruction
-                number="01"
-                text="The test will begin immediately after you tap Start Test."
-              />
+    /* =======================================================
+       SUBMIT TEST
+       ======================================================= */
 
-              <Instruction
-                number="02"
-                text="Each question has one best answer. Select the option you think is correct."
-              />
+    const submitTest =
+        async () => {
+            if (
+                isSubmitting ||
+                submissionStartedRef.current
+            ) {
+                return;
+            }
 
-              <Instruction
-                number="03"
-                text="Your performance will be analyzed after submission."
-              />
+            if (
+                !selectedTest ||
+                !Array.isArray(questions) ||
+                questions.length === 0
+            ) {
+                setSubmissionError(
+                    "There are no valid questions to submit."
+                );
+                return;
+            }
 
-              <Instruction
-                number="04"
-                text="An estimated rank will be generated based on your score."
-                last
-              />
-            </div>
-          )}
+            submissionStartedRef.current = true;
 
-          <div
-            style={styles.readyCard}
-          >
-            <div
-              style={styles.readyHeader}
-            >
-              <div
-                style={{
-                  minWidth: 0,
-                }}
-              >
-                <div
-                  style={
-                    styles.readyTitle
-                  }
-                >
-                  Ready to begin?
-                </div>
+            setIsSubmitting(
+                true
+            );
 
-                <div
-                  style={
-                    styles.readySubtitle
-                  }
-                >
-                  Your test is set up and
-                  ready.
-                </div>
-              </div>
+            setSubmissionError("");
 
-              <div
-                style={
-                  styles.readyCheck
-                }
-              >
-                <Icon
-                  name="check"
-                  size={18}
-                  stroke={COLORS.green}
+            setSubmitProgress(8);
+
+            setStage(
+                "submission"
+            );
+
+            try {
+                const result =
+                    await submitAnswersToServer();
+
+                setResultData(
+                    result
+                );
+
+                setSubmitProgress(
+                    100
+                );
+
+                window.setTimeout(
+                    () => {
+                        setStage(
+                            "result"
+                        );
+
+                        setIsSubmitting(
+                            false
+                        );
+                        submissionStartedRef.current = false;
+                    },
+                    400
+                );
+            } catch (error) {
+                console.error(
+                    "Test submission error:",
+                    error
+                );
+
+                setSubmissionError(
+                    error?.message ||
+                    "Unable to submit the test."
+                );
+
+                setSubmitProgress(
+                    100
+                );
+
+                setIsSubmitting(
+                    false
+                );
+                submissionStartedRef.current = false;
+            }
+        };
+
+    /* =======================================================
+       NEXT
+       ======================================================= */
+
+    const nextQuestion =
+        () => {
+            if (
+                !currentQuestionData ||
+                isSubmitting
+            ) {
+                return;
+            }
+
+            if (
+                currentQuestion <
+                questions.length - 1
+            ) {
+                setCurrentQuestion(
+                    (previous) =>
+                        previous + 1
+                );
+
+                return;
+            }
+
+            submitTest();
+        };
+
+    /* =======================================================
+       TIMER
+       ======================================================= */
+
+    useEffect(() => {
+        if (
+            stage !== "test" ||
+            timeLeft <= 0
+        ) {
+            return;
+        }
+
+        const timer = window.setInterval(() => {
+            setTimeLeft((previous) =>
+                previous > 0
+                    ? previous - 1
+                    : 0
+            );
+        }, 1000);
+
+        return () => {
+            window.clearInterval(timer);
+        };
+    }, [stage]);
+
+    /* =======================================================
+       AUTO SUBMIT ON TIMEOUT
+       ======================================================= */
+
+    useEffect(() => {
+        if (
+            stage === "test" &&
+            timeLeft === 0 &&
+            questions.length > 0 &&
+            !isSubmitting
+        ) {
+            submitTest();
+        }
+    }, [
+        stage,
+        timeLeft,
+        questions.length,
+        isSubmitting,
+    ]);
+
+    /* =======================================================
+       SUBMISSION PROGRESS
+       ======================================================= */
+
+    useEffect(() => {
+        if (
+            stage !==
+            "submission"
+        ) {
+            return;
+        }
+
+        if (
+            submissionError
+        ) {
+            return;
+        }
+
+        const interval =
+            window.setInterval(
+                () => {
+                    setSubmitProgress(
+                        (previous) => {
+                            if (
+                                previous >=
+                                92
+                            ) {
+                                window.clearInterval(
+                                    interval
+                                );
+
+                                return 92;
+                            }
+
+                            return (
+                                previous + 3
+                            );
+                        }
+                    );
+                },
+                140
+            );
+
+        return () =>
+            window.clearInterval(
+                interval
+            );
+    }, [
+        stage,
+        submissionError,
+    ]);
+
+    /* =======================================================
+       FORMAT TIME
+       ======================================================= */
+
+    const formatTime =
+        (seconds) => {
+            const safe =
+                Math.max(
+                    0,
+                    Number(
+                        seconds
+                    ) || 0
+                );
+
+            const hours =
+                Math.floor(
+                    safe / 3600
+                );
+
+            const minutes =
+                Math.floor(
+                    (safe % 3600) /
+                    60
+                );
+
+            const secs =
+                safe % 60;
+
+            if (
+                hours > 0
+            ) {
+                return `${String(
+                    hours
+                ).padStart(
+                    2,
+                    "0"
+                )}:${String(
+                    minutes
+                ).padStart(
+                    2,
+                    "0"
+                )}:${String(
+                    secs
+                ).padStart(
+                    2,
+                    "0"
+                )}`;
+            }
+
+            return `${String(
+                minutes
+            ).padStart(
+                2,
+                "0"
+            )}:${String(
+                secs
+            ).padStart(
+                2,
+                "0"
+            )}`;
+        };
+
+    /* =======================================================
+       RESET ALL
+       ======================================================= */
+
+    const resetTests =
+        () => {
+            setStage(
+                "list"
+            );
+
+            setSelectedTest(
+                null
+            );
+
+            setQuestions([]);
+
+            setQuestionsError(
+                ""
+            );
+
+            setCurrentQuestion(
+                0
+            );
+
+            setAnswers({});
+
+            setDifficulty(
+                "Mixed"
+            );
+
+            setResultData(
+                null
+            );
+
+            setSubmissionError(
+                ""
+            );
+
+            setIsSubmitting(
+                false
+            );
+
+            setSubmitProgress(
+                0
+            );
+
+            setTimeLeft(
+                0
+            );
+        };
+
+    /* =======================================================
+       LIST SCREEN
+       ======================================================= */
+
+    if (
+        stage === "list"
+    ) {
+        return (
+            <Page>
+                <Header
+                    onBack={onBack}
                 />
-              </div>
-            </div>
 
-            <button
-              type="button"
-              style={
-                styles.startButton
-              }
-              onClick={startTest}
-            >
-              <Icon
-                name="play"
-                size={18}
-                stroke="#FFFFFF"
-              />
-
-              <span>Start Test</span>
-            </button>
-          </div>
-        </main>
-      </Page>
-    );
-  }
-
-  /* =======================================================
-     ACTIVE TEST
-  ======================================================= */
-
-  if (
-    stage === "test" &&
-    selectedTest
-  ) {
-    const progress =
-      ((currentQuestion + 1) /
-        demoQuestions.length) *
-      100;
-
-    return (
-      <Page>
-        <Header
-          onBack={() =>
-            setStage("preview")
-          }
-          right={
-            <div
-              style={
-                styles.testCounter
-              }
-            >
-              {currentQuestion + 1}/
-              {demoQuestions.length}
-            </div>
-          }
-        />
-
-        <main style={styles.container}>
-          <div
-            style={styles.examBar}
-          >
-            <div
-              style={{
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={
-                  styles.examLabel
-                }
-              >
-                CURRENT TEST
-              </div>
-
-              <div
-                style={
-                  styles.examName
-                }
-              >
-                {selectedTest.title}
-              </div>
-            </div>
-
-            <div
-              style={
-                styles.timerPill
-              }
-            >
-              <Icon
-                name="clock"
-                size={15}
-                stroke={COLORS.green}
-              />
-              <span>59:42</span>
-            </div>
-          </div>
-
-          <div
-            style={
-              styles.progressWrapper
-            }
-          >
-            <div
-              style={
-                styles.progressTrack
-              }
-            >
-              <div
-                style={{
-                  ...styles.progressFill,
-                  width: `${progress}%`,
-                }}
-              />
-            </div>
-
-            <div
-              style={
-                styles.progressText
-              }
-            >
-              <span>
-                Question{" "}
-                {currentQuestion + 1}{" "}
-                of{" "}
-                {demoQuestions.length}
-              </span>
-
-              <span>
-                {Math.round(progress)}%
-                complete
-              </span>
-            </div>
-          </div>
-
-          <div
-            style={
-              styles.questionPanel
-            }
-          >
-            <div
-              style={
-                styles.questionLabel
-              }
-            >
-              QUESTION{" "}
-              {String(
-                currentQuestion + 1
-              ).padStart(2, "0")}
-            </div>
-
-            <h1
-              style={
-                styles.questionText
-              }
-            >
-              {
-                currentQuestionData.question
-              }
-            </h1>
-
-            <div
-              style={styles.options}
-            >
-              {currentQuestionData.options.map(
-                (
-                  option,
-                  index
-                ) => {
-                  const selected =
-                    answers[
-                      currentQuestion
-                    ] === index;
-
-                  return (
-                    <button
-                      type="button"
-                      key={option}
-                      onClick={() =>
-                        chooseAnswer(
-                          index
-                        )
-                      }
-                      style={{
-                        ...styles.optionButton,
-                        ...(selected
-                          ? styles.selectedOption
-                          : {}),
-                      }}
+                <main
+                    style={
+                        styles.container
+                    }
+                >
+                    <div
+                        style={
+                            styles.kicker
+                        }
                     >
-                      <span
-                        style={{
-                          ...styles.optionLetter,
-                          ...(selected
-                            ? styles.selectedLetter
-                            : {}),
-                        }}
-                      >
-                        {String.fromCharCode(
-                          65 + index
-                        )}
-                      </span>
+                        TEST CENTER
+                    </div>
 
-                      <span
-                        style={{
-                          minWidth: 0,
-                        }}
-                      >
-                        {option}
-                      </span>
+                    <h1
+                        style={
+                            styles.pageTitle
+                        }
+                    >
+                        Mock Tests
+                    </h1>
 
-                      {selected && (
-                        <span
-                          style={
-                            styles.optionTick
-                          }
+                    <p
+                        style={
+                            styles.pageSubtitle
+                        }
+                    >
+                        Simulate the real
+                        exam environment,
+                        improve your
+                        accuracy and
+                        measure your
+                        preparation.
+                    </p>
+
+                    <div
+                        style={
+                            styles.featuredCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.featuredTop
+                            }
                         >
-                          <Icon
-                            name="check"
-                            size={14}
-                            stroke="#FFFFFF"
-                          />
+                            <div
+                                style={
+                                    styles.featuredIcon
+                                }
+                            >
+                                <Icon
+                                    name="target"
+                                    size={26}
+                                    stroke={
+                                        COLORS.green
+                                    }
+                                />
+                            </div>
+
+                            <span
+                                style={
+                                    styles.featuredBadge
+                                }
+                            >
+                                RECOMMENDED
+                            </span>
+                        </div>
+
+                        <div
+                            style={
+                                styles.featuredTitle
+                            }
+                        >
+                            Full Syllabus
+                            Mock
+                        </div>
+
+                        <div
+                            style={
+                                styles.featuredDescription
+                            }
+                        >
+                            Complete exam
+                            simulation with
+                            performance
+                            analysis.
+                        </div>
+
+                        <div
+                            style={
+                                styles.featuredStats
+                            }
+                        >
+                            <Stat
+                                icon="questions"
+                                text="180 Questions"
+                            />
+
+                            <Stat
+                                icon="clock"
+                                text="180 Minutes"
+                            />
+
+                            <Stat
+                                icon="trophy"
+                                text="720 Marks"
+                            />
+                        </div>
+
+                        <button
+                            type="button"
+                            style={
+                                styles.featuredButton
+                            }
+                            onClick={() =>
+                                openTest(
+                                    tests[0]
+                                )
+                            }
+                        >
+                            <span style={{ color: "#010F0E" }}>
+                                Take Test
+                            </span>
+
+                            <Icon
+                                name="arrow"
+                                size={18}
+                                stroke="#010F0E"
+                            />
+                        </button>
+                    </div>
+
+                    <div
+                        style={
+                            styles.sectionHeader
+                        }
+                    >
+                        <h2
+                            style={
+                                styles.sectionTitle
+                            }
+                        >
+                            Available Tests
+                        </h2>
+
+                        <span
+                            style={
+                                styles.sectionCount
+                            }
+                        >
+                            {tests.length} Tests
                         </span>
-                      )}
+                    </div>
+
+                    {tests
+                        .slice(1)
+                        .map((test) => (
+                            <TestCard
+                                key={test.id}
+                                test={test}
+                                onClick={() =>
+                                    openTest(
+                                        test
+                                    )
+                                }
+                            />
+                        ))}
+
+                    <div
+                        style={
+                            styles.tipCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.tipIcon
+                            }
+                        >
+                            <Icon
+                                name="trend"
+                                size={20}
+                                stroke={
+                                    COLORS.green
+                                }
+                            />
+                        </div>
+
+                        <div>
+                            <div
+                                style={
+                                    styles.tipTitle
+                                }
+                            >
+                                Practice
+                                strategically
+                            </div>
+
+                            <div
+                                style={
+                                    styles.tipText
+                                }
+                            >
+                                Every new attempt
+                                can receive a
+                                fresh randomized
+                                question set.
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </Page>
+        );
+    }
+
+    /* =======================================================
+       PREVIEW
+       ======================================================= */
+
+    if (
+        stage ===
+        "preview" &&
+        selectedTest
+    ) {
+        const displayedCount =
+            questionsLoading
+                ? "…"
+                : questions.length;
+
+        return (
+            <Page>
+                <Header
+                    onBack={() => {
+                        resetTests();
+                    }}
+                />
+
+                <main
+                    style={
+                        styles.container
+                    }
+                >
+                    <div
+                        style={
+                            styles.breadcrumb
+                        }
+                    >
+                        <span>
+                            Mock Tests
+                        </span>
+
+                        <span>›</span>
+
+                        <strong>
+                            Take a Test
+                        </strong>
+                    </div>
+
+                    <div
+                        style={
+                            styles.testHero
+                        }
+                    >
+                        <div
+                            style={
+                                styles.testHeroIcon
+                            }
+                        >
+                            <Icon
+                                name={
+                                    selectedTest.icon
+                                }
+                                size={27}
+                                stroke={
+                                    COLORS.green
+                                }
+                            />
+                        </div>
+
+                        <div
+                            style={{
+                                flex: 1,
+                            }}
+                        >
+                            <div
+                                style={
+                                    styles.testHeroEyebrow
+                                }
+                            >
+                                {
+                                    selectedTest.number
+                                }
+                            </div>
+
+                            <h1
+                                style={
+                                    styles.testHeroTitle
+                                }
+                            >
+                                {
+                                    selectedTest.title
+                                }
+                            </h1>
+
+                            <p
+                                style={
+                                    styles.testHeroDescription
+                                }
+                            >
+                                {
+                                    selectedTest.description
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        style={
+                            styles.metaGrid
+                        }
+                    >
+                        <MetaBox
+                            icon="questions"
+                            label="Questions"
+                            value={
+                                displayedCount
+                            }
+                        />
+
+                        <MetaBox
+                            icon="clock"
+                            label="Duration"
+                            value={
+                                selectedTest.duration
+                            }
+                        />
+
+                        <MetaBox
+                            icon="trophy"
+                            label="Maximum"
+                            value={
+                                questions.length >
+                                    0
+                                    ? `${questions.length *
+                                    4
+                                    } Marks`
+                                    : `${selectedTest.marks} Marks`
+                            }
+                        />
+                    </div>
+
+                    <div
+                        style={
+                            styles.difficultyCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.difficultyHeader
+                            }
+                        >
+                            <div>
+                                <div
+                                    style={
+                                        styles.difficultyTitle
+                                    }
+                                >
+                                    Question
+                                    Difficulty
+                                </div>
+
+                                <div
+                                    style={
+                                        styles.difficultySubtitle
+                                    }
+                                >
+                                    Choose the
+                                    difficulty for
+                                    this attempt.
+                                </div>
+                            </div>
+
+                            <span
+                                style={
+                                    styles.difficultyBadge
+                                }
+                            >
+                                {difficulty}
+                            </span>
+                        </div>
+
+                        <div
+                            style={
+                                styles.difficultyOptions
+                            }
+                        >
+                            {[
+                                "Easy",
+                                "Medium",
+                                "Hard",
+                                "Mixed",
+                            ].map(
+                                (level) => {
+                                    const active =
+                                        difficulty ===
+                                        level;
+
+                                    return (
+                                        <button
+                                            key={
+                                                level
+                                            }
+                                            type="button"
+                                            disabled={
+                                                questionsLoading
+                                            }
+                                            onClick={() =>
+                                                changeDifficulty(
+                                                    level
+                                                )
+                                            }
+                                            style={{
+                                                ...styles.difficultyButton,
+
+                                                ...(active
+                                                    ? styles.difficultyButtonActive
+                                                    : {}),
+
+                                                opacity:
+                                                    questionsLoading &&
+                                                        !active
+                                                        ? 0.6
+                                                        : 1,
+                                            }}
+                                        >
+                                            {level}
+                                        </button>
+                                    );
+                                }
+                            )}
+                        </div>
+
+                        <div
+                            style={
+                                styles.randomNote
+                            }
+                        >
+                            <Icon
+                                name="trend"
+                                size={14}
+                                stroke={
+                                    COLORS.green
+                                }
+                            />
+
+                            <span>
+                                A fresh random
+                                set is loaded
+                                when you change
+                                difficulty or
+                                start the test.
+                            </span>
+                        </div>
+                    </div>
+
+                    {questionsError && (
+                        <div
+                            style={
+                                styles.errorBox
+                            }
+                        >
+                            <strong>
+                                Questions not
+                                available
+                            </strong>
+
+                            <div
+                                style={{
+                                    marginTop: 5,
+                                }}
+                            >
+                                {questionsError}
+                            </div>
+                        </div>
+                    )}
+
+                    {!questionsLoading &&
+                        !questionsError &&
+                        questions.length <
+                        selectedTest.questions &&
+                        questions.length >
+                        0 && (
+                            <div
+                                style={
+                                    styles.infoBox
+                                }
+                            >
+                                <strong>
+                                    {questions.length}
+                                </strong>{" "}
+                                real questions
+                                are currently
+                                available in
+                                MongoDB for this
+                                selection. The
+                                app will use
+                                only real
+                                questions and
+                                will not
+                                duplicate them
+                                artificially.
+                            </div>
+                        )}
+
+                    <div
+                        style={
+                            styles.tabs
+                        }
+                    >
+                        <button
+                            type="button"
+                            style={{
+                                ...styles.tab,
+
+                                ...(activeTab ===
+                                    "subjects"
+                                    ? styles.activeTab
+                                    : {}),
+                            }}
+                            onClick={() =>
+                                setActiveTab(
+                                    "subjects"
+                                )
+                            }
+                        >
+                            Subjects
+                        </button>
+
+                        <button
+                            type="button"
+                            style={{
+                                ...styles.tab,
+
+                                ...(activeTab ===
+                                    "instructions"
+                                    ? styles.activeTab
+                                    : {}),
+                            }}
+                            onClick={() =>
+                                setActiveTab(
+                                    "instructions"
+                                )
+                            }
+                        >
+                            Instructions
+                        </button>
+                    </div>
+
+                    {activeTab ===
+                        "subjects" ? (
+                        <div
+                            style={
+                                styles.panel
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.panelHeader
+                                }
+                            >
+                                <div>
+                                    <h2
+                                        style={
+                                            styles.panelTitle
+                                        }
+                                    >
+                                        Test Structure
+                                    </h2>
+
+                                    <p
+                                        style={
+                                            styles.panelSubtitle
+                                        }
+                                    >
+                                        Questions included
+                                        in this test
+                                    </p>
+                                </div>
+
+                                <span
+                                    style={
+                                        styles.panelBadge
+                                    }
+                                >
+                                    {
+                                        selectedTest.difficulty
+                                    }
+                                </span>
+                            </div>
+
+                            <div
+                                style={
+                                    styles.subjectList
+                                }
+                            >
+                                {selectedTest.subjects.map(
+                                    (
+                                        subject,
+                                        index
+                                    ) => (
+                                        <div
+                                            key={
+                                                subject.name
+                                            }
+                                            style={{
+                                                ...styles.subjectItem,
+
+                                                borderBottom:
+                                                    index ===
+                                                        selectedTest
+                                                            .subjects
+                                                            .length -
+                                                        1
+                                                        ? "none"
+                                                        : `1px solid ${COLORS.border}`,
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    ...styles.subjectAvatar,
+
+                                                    color:
+                                                        subject.tone,
+
+                                                    background:
+                                                        subject.tone ===
+                                                            COLORS.green
+                                                            ? COLORS.mint
+                                                            : "#F6F8FA",
+                                                }}
+                                            >
+                                                {
+                                                    subject.icon
+                                                }
+                                            </div>
+
+                                            <div
+                                                style={{
+                                                    flex: 1,
+                                                }}
+                                            >
+                                                <div
+                                                    style={
+                                                        styles.subjectName
+                                                    }
+                                                >
+                                                    {
+                                                        subject.name
+                                                    }
+                                                </div>
+
+                                                <div
+                                                    style={
+                                                        styles.subjectMeta
+                                                    }
+                                                >
+                                                    {
+                                                        subject.questions
+                                                    }{" "}
+                                                    Questions
+                                                    <span>
+                                                        {" "}
+                                                        •{" "}
+                                                    </span>
+                                                    {
+                                                        subject.marks
+                                                    }{" "}
+                                                    Marks
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                style={
+                                                    styles.checkCircle
+                                                }
+                                            >
+                                                <Icon
+                                                    name="check"
+                                                    size={16}
+                                                    stroke="#FFFFFF"
+                                                />
+                                            </div>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            style={
+                                styles.panel
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.panelHeader
+                                }
+                            >
+                                <div>
+                                    <h2
+                                        style={
+                                            styles.panelTitle
+                                        }
+                                    >
+                                        Test Instructions
+                                    </h2>
+
+                                    <p
+                                        style={
+                                            styles.panelSubtitle
+                                        }
+                                    >
+                                        Please read before
+                                        starting
+                                    </p>
+                                </div>
+
+                                <div
+                                    style={
+                                        styles.infoCircle
+                                    }
+                                >
+                                    <Icon
+                                        name="info"
+                                        size={17}
+                                        stroke={
+                                            COLORS.green
+                                        }
+                                    />
+                                </div>
+                            </div>
+
+                            <Instruction
+                                number="01"
+                                text="The test will begin immediately after you tap Start Test."
+                            />
+
+                            <Instruction
+                                number="02"
+                                text="Each question has one best answer. Select the option you think is correct."
+                            />
+
+                            <Instruction
+                                number="03"
+                                text="Your responses are evaluated securely by the server."
+                            />
+
+                            <Instruction
+                                number="04"
+                                text="Questions can be randomly selected according to the chosen difficulty."
+                                last
+                            />
+                        </div>
+                    )}
+
+                    <div
+                        style={
+                            styles.readyCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.readyHeader
+                            }
+                        >
+                            <div>
+                                <div
+                                    style={
+                                        styles.readyTitle
+                                    }
+                                >
+                                    {questionsLoading
+                                        ? "Loading your test…"
+                                        : questions.length >
+                                            0
+                                            ? "Ready to begin?"
+                                            : "Test not ready"}
+                                </div>
+
+                                <div
+                                    style={
+                                        styles.readySubtitle
+                                    }
+                                >
+                                    {questionsLoading
+                                        ? "Fetching a fresh random question set."
+                                        : questions.length >
+                                            0
+                                            ? `${questions.length} real questions are loaded.`
+                                            : "Add active questions in MongoDB before starting."}
+                                </div>
+                            </div>
+
+                            <div
+                                style={
+                                    styles.readyCheck
+                                }
+                            >
+                                <Icon
+                                    name="check"
+                                    size={18}
+                                    stroke={
+                                        COLORS.green
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            style={{
+                                ...styles.startButton,
+
+                                opacity:
+                                    questionsLoading ||
+                                        questions.length ===
+                                        0
+                                        ? 0.55
+                                        : 1,
+
+                                cursor:
+                                    questionsLoading ||
+                                        questions.length ===
+                                        0
+                                        ? "not-allowed"
+                                        : "pointer",
+                            }}
+                            onClick={
+                                startTest
+                            }
+                            disabled={
+                                questionsLoading ||
+                                questions.length ===
+                                0
+                            }
+                        >
+                            <Icon
+                                name="play"
+                                size={18}
+                                stroke="#FFFFFF"
+                            />
+
+                            <span>
+                                Start Test
+                            </span>
+                        </button>
+                    </div>
+                </main>
+            </Page>
+        );
+    }
+
+    /* =======================================================
+       ACTIVE TEST
+       ======================================================= */
+
+    if (
+        stage === "test" &&
+        selectedTest
+    ) {
+        if (
+            !Array.isArray(questions) ||
+            questions.length === 0 ||
+            currentQuestion < 0 ||
+            currentQuestion >= questions.length ||
+            !currentQuestionData
+        ) {
+            return (
+                <Page>
+                    <Header
+                        right={
+                            <div
+                                style={
+                                    styles.examHeaderRight
+                                }
+                            >
+                                <div
+                                    style={
+                                        styles.testCounter
+                                    }
+                                >
+                                    {currentQuestion + 1}
+                                    /
+                                    {questions.length}
+                                </div>
+
+                                <div
+                                    style={
+                                        styles.timerPill
+                                    }
+                                >
+                                    <Icon
+                                        name="clock"
+                                        size={15}
+                                        stroke={
+                                            COLORS.green
+                                        }
+                                    />
+
+                                    <span>
+                                        {formatTime(timeLeft)}
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    />
+
+                    <main
+                        style={
+                            styles.container
+                        }
+                    >
+                        <div
+                            style={
+                                styles.errorBox
+                            }
+                        >
+                            <strong>
+                                Question could not be loaded
+                            </strong>
+
+                            <div
+                                style={{
+                                    marginTop: 5,
+                                }}
+                            >
+                                The current question is unavailable. Return to the test preview and try again.
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            style={
+                                styles.primaryResultButton
+                            }
+                            onClick={() =>
+                                setStage("preview")
+                            }
+                        >
+                            Back to Test
+                        </button>
+                    </main>
+                </Page>
+            );
+        }
+
+        const progress =
+            questions.length >
+                0
+                ? ((currentQuestion +
+                    1) /
+                    questions.length) *
+                100
+                : 0;
+
+        const answeredCount =
+            Object.keys(
+                answers
+            ).length;
+
+        return (
+            <Page>
+                <Header
+                    right={
+                        <div
+                            style={
+                                styles.examHeaderRight
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.testCounter
+                                }
+                            >
+                                {currentQuestion +
+                                    1}
+                                /
+                                {questions.length}
+                            </div>
+
+                            <div
+                                style={
+                                    styles.timerPill
+                                }
+                            >
+                                <Icon
+                                    name="clock"
+                                    size={15}
+                                    stroke={
+                                        COLORS.green
+                                    }
+                                />
+
+                                <span>
+                                    {formatTime(
+                                        timeLeft
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+                    }
+                />
+
+                <main
+                    style={
+                        styles.container
+                    }
+                >
+                    <div
+                        style={
+                            styles.examModeBar
+                        }
+                    >
+                        EXAM MODE • Do not leave the test
+                        {examViolationCount > 0 && (
+                            <span>
+                                {` • Violation ${examViolationCount}`}
+                            </span>
+                        )}
+                    </div>
+
+                    {examWarning && (
+                        <div
+                            style={
+                                styles.examWarning
+                            }
+                        >
+                            {examWarning}
+                        </div>
+                    )}
+
+                    <div
+                        style={
+                            styles.examBar
+                        }
+                    >
+                        <div
+                            style={{
+                                minWidth: 0,
+                                flex: 1,
+                            }}
+                        >
+                            <div
+                                style={
+                                    styles.examLabel
+                                }
+                            >
+                                CURRENT TEST
+                            </div>
+
+                            <div
+                                style={
+                                    styles.examName
+                                }
+                            >
+                                {
+                                    selectedTest.title
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div
+                        style={
+                            styles.progressWrapper
+                        }
+                    >
+                        <div
+                            style={
+                                styles.progressTrack
+                            }
+                        >
+                            <div
+                                style={{
+                                    ...styles.progressFill,
+
+                                    width: `${progress}%`,
+                                }}
+                            />
+                        </div>
+
+                        <div
+                            style={
+                                styles.progressText
+                            }
+                        >
+                            <span>
+                                Question{" "}
+                                {currentQuestion +
+                                    1}{" "}
+                                of{" "}
+                                {
+                                    questions.length
+                                }
+                            </span>
+
+                            <span>
+                                {
+                                    Math.round(
+                                        progress
+                                    )
+                                }
+                                % complete
+                            </span>
+                        </div>
+                    </div>
+
+                    <div
+                        style={
+                            styles.attemptBar
+                        }
+                    >
+                        <span>
+                            Difficulty:{" "}
+                            <strong>
+                                {difficulty}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Attempted:{" "}
+                            <strong>
+                                {answeredCount}
+                            </strong>
+                        </span>
+                    </div>
+
+                    <div
+                        style={
+                            styles.questionPalette
+                        }
+                    >
+                        <div
+                            style={
+                                styles.paletteHeader
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.paletteTitle
+                                }
+                            >
+                                Question Palette
+                            </div>
+
+                            <div
+                                style={
+                                    styles.paletteLegend
+                                }
+                            >
+                                <span
+                                    style={
+                                        styles.legendItem
+                                    }
+                                >
+                                    <span
+                                        style={{
+                                            ...styles.legendDot,
+                                            ...styles.legendDotCurrent,
+                                        }}
+                                    />
+                                    Current
+                                </span>
+
+                                <span
+                                    style={
+                                        styles.legendItem
+                                    }
+                                >
+                                    <span
+                                        style={{
+                                            ...styles.legendDot,
+                                            ...styles.legendDotAnswered,
+                                        }}
+                                    />
+                                    Answered
+                                </span>
+
+                                <span
+                                    style={
+                                        styles.legendItem
+                                    }
+                                >
+                                    <span
+                                        style={{
+                                            ...styles.legendDot,
+                                            ...styles.legendDotUnanswered,
+                                        }}
+                                    />
+                                    Not Answered
+                                </span>
+                            </div>
+                        </div>
+
+                        <div
+                            style={
+                                styles.paletteGrid
+                            }
+                        >
+                            {questions.map((question, index) => {
+                                const isCurrent =
+                                    index === currentQuestion;
+                                const isAnswered =
+                                    Boolean(answers[index]);
+                                const isMarked =
+                                    markedQuestions.includes(index);
+
+                                return (
+                                    <button
+                                        key={
+                                            String(
+                                                question.questionId ||
+                                                question.id ||
+                                                index
+                                            )
+                                        }
+                                        type="button"
+                                        aria-label={`Go to question ${index + 1}`}
+                                        aria-current={
+                                            isCurrent
+                                                ? "step"
+                                                : undefined
+                                        }
+                                        onClick={() =>
+                                            goToQuestion(index)
+                                        }
+                                        disabled={isSubmitting}
+                                        style={{
+                                            ...styles.paletteButton,
+                                            ...(isAnswered
+                                                ? styles.paletteButtonAnswered
+                                                : styles.paletteButtonUnanswered),
+                                            ...(isCurrent
+                                                ? styles.paletteButtonCurrent
+                                                : {}),
+                                            ...(isMarked
+                                                ? styles.paletteButtonMarked
+                                                : {}),
+                                        }}
+                                    >
+                                        {index + 1}
+                                        {isMarked && (
+                                            <span
+                                                aria-label="Marked for review"
+                                                style={
+                                                    styles.paletteReviewDot
+                                                }
+                                            />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div
+                        style={
+                            styles.questionPanel
+                        }
+                    >
+                        <div
+                            style={
+                                styles.questionLabel
+                            }
+                        >
+                            QUESTION{" "}
+                            {String(
+                                currentQuestion +
+                                1
+                            ).padStart(
+                                2,
+                                "0"
+                            )}
+                        </div>
+
+
+                        <button
+                            type="button"
+                            style={
+                                styles.examBookmarkButton
+                            }
+                            onClick={
+                                toggleQuestionBookmark
+                            }
+                            disabled={isSubmitting}
+                        >
+                            {bookmarkIds.has(
+                                currentQuestionData.questionId
+                            )
+                                ? "Bookmarked"
+                                : "Bookmark"}
+                        </button>
+                        <h1
+                            style={
+                                styles.questionText
+                            }
+                        >
+                            {
+                                currentQuestionData.question
+                            }
+                        </h1>
+
+                        {currentQuestionData.chapterName && (
+                            <div
+                                style={
+                                    styles.questionMeta
+                                }
+                            >
+                                {
+                                    currentQuestionData.subjectName
+                                }
+
+                                {currentQuestionData
+                                    .chapterName
+                                    ? ` • ${currentQuestionData.chapterName}`
+                                    : ""}
+                            </div>
+                        )}
+
+                        <div
+                            style={
+                                styles.options
+                            }
+                        >
+                            {currentQuestionData.options.map(
+                                (option) => {
+                                    const selected =
+                                        answers[currentQuestion] ===
+                                        option.key;
+
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={
+                                                option.key
+                                            }
+                                            onClick={() =>
+                                                chooseAnswer(
+                                                    option.key
+                                                )
+                                            }
+                                            style={{
+                                                ...styles.optionButton,
+
+                                                ...(selected
+                                                    ? styles.selectedOption
+                                                    : {}),
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    ...styles.optionLetter,
+
+                                                    ...(selected
+                                                        ? styles.selectedLetter
+                                                        : {}),
+                                                }}
+                                            >
+                                                {
+                                                    option.key
+                                                }
+                                            </span>
+
+                                            <span
+                                                style={{
+                                                    flex: 1,
+                                                    textAlign:
+                                                        "left",
+                                                }}
+                                            >
+                                                {
+                                                    option.text
+                                                }
+                                            </span>
+
+                                            {selected && (
+                                                <span
+                                                    style={
+                                                        styles.optionTick
+                                                    }
+                                                >
+                                                    <Icon
+                                                        name="check"
+                                                        size={14}
+                                                        stroke="#FFFFFF"
+                                                    />
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                }
+                            )}
+                        </div>
+
+                        <div
+                            style={
+                                styles.testActionRow
+                            }
+                        >
+                            <button
+                                type="button"
+                                style={{
+                                    ...styles.smallActionButton,
+                                    ...(currentQuestion === 0
+                                        ? styles.smallActionButtonDisabled
+                                        : {}),
+                                }}
+                                onClick={() =>
+                                    setCurrentQuestion(
+                                        (previous) =>
+                                            Math.max(0, previous - 1)
+                                    )
+                                }
+                                disabled={
+                                    currentQuestion === 0 ||
+                                    isSubmitting
+                                }
+                            >
+                                <Icon
+                                    name="back"
+                                    size={16}
+                                    stroke={COLORS.navy}
+                                />
+                                Previous
+                            </button>
+
+                            <button
+                                type="button"
+                                style={
+                                    styles.markButton
+                                }
+                                onClick={
+                                    toggleMarkForReview
+                                }
+                                disabled={isSubmitting}
+                            >
+                                {isCurrentMarked
+                                    ? "Marked"
+                                    : "Mark for Review"}
+                            </button>
+
+                            <button
+                                type="button"
+                                style={
+                                    styles.nextButtonCompact
+                                }
+                                onClick={nextQuestion}
+                                disabled={isSubmitting}
+                            >
+                                {currentQuestion ===
+                                    questions.length - 1
+                                    ? "Submit Test"
+                                    : "Next"}
+
+                                <Icon
+                                    name="arrow"
+                                    size={17}
+                                    stroke="#FFFFFF"
+                                />
+                            </button>
+                        </div>
+                    </div>
+                </main>
+            </Page>
+        );
+    }
+
+    /* =======================================================
+       SUBMISSION
+       ======================================================= */
+
+    if (
+        stage ===
+        "submission"
+    ) {
+        return (
+            <Page>
+                <main
+                    style={
+                        styles.submissionPage
+                    }
+                >
+                    <div
+                        style={
+                            styles.submissionCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.successRing
+                            }
+                        >
+                            <Icon
+                                name="check"
+                                size={55}
+                                stroke="#FFFFFF"
+                            />
+                        </div>
+
+                        <div
+                            style={
+                                styles.successEyebrow
+                            }
+                        >
+                            TEST SUBMISSION
+                        </div>
+
+                        <h1
+                            style={
+                                styles.successTitle
+                            }
+                        >
+                            {submissionError
+                                ? "Submission Failed"
+                                : "Test Submitted Successfully!"}
+                        </h1>
+
+                        <p
+                            style={
+                                styles.successText
+                            }
+                        >
+                            {submissionError
+                                ? submissionError
+                                : "Your responses are being evaluated securely by the server."}
+                        </p>
+
+                        <div
+                            style={
+                                styles.largeProgress
+                            }
+                        >
+                            <div
+                                style={{
+                                    ...styles.largeProgressFill,
+
+                                    width: `${submitProgress}%`,
+                                }}
+                            />
+                        </div>
+
+                        <div
+                            style={
+                                styles.analysisStatus
+                            }
+                        >
+                            <span>
+                                {submissionError
+                                    ? "Please go back and try again"
+                                    : "Calculating your result"}
+                            </span>
+
+                            <strong>
+                                {
+                                    submitProgress
+                                }
+                                %
+                            </strong>
+                        </div>
+
+                        {submissionError && (
+                            <button
+                                type="button"
+                                style={
+                                    styles.primaryResultButton
+                                }
+                                onClick={() =>
+                                    setStage(
+                                        "preview"
+                                    )
+                                }
+                            >
+                                Back to Test
+                            </button>
+                        )}
+                    </div>
+                </main>
+            </Page>
+        );
+    }
+
+    /* =======================================================
+       RESULT
+       ======================================================= */
+
+    if (
+        stage === "result"
+    ) {
+        return (
+            <Page>
+                <main
+                    style={
+                        styles.container
+                    }
+                >
+                    <div
+                        style={
+                            styles.kicker
+                        }
+                    >
+                        TEST COMPLETED
+                    </div>
+
+                    <div
+                        style={
+                            styles.resultHero
+                        }
+                    >
+                        <div>
+                            <h1
+                                style={
+                                    styles.pageTitle
+                                }
+                            >
+                                Test Result
+                            </h1>
+
+                            <p
+                                style={
+                                    styles.pageSubtitle
+                                }
+                            >
+                                {
+                                    selectedTest?.title
+                                }
+                            </p>
+                        </div>
+
+                        <div
+                            style={
+                                styles.resultStatus
+                            }
+                        >
+                            Completed
+                        </div>
+                    </div>
+
+                    <div
+                        style={
+                            styles.scoreCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.scoreCircle
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.scoreValue
+                                }
+                            >
+                                {
+                                    resultScore
+                                }
+                            </div>
+
+                            <div
+                                style={
+                                    styles.scoreCaption
+                                }
+                            >
+                                Score
+                            </div>
+                        </div>
+
+                        <div
+                            style={
+                                styles.scoreSummary
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.scoreSummaryLabel
+                                }
+                            >
+                                Total Performance
+                            </div>
+
+                            <div
+                                style={
+                                    styles.scoreSummaryValue
+                                }
+                            >
+                                {
+                                    resultCorrect
+                                }{" "}
+                                /{" "}
+                                {
+                                    resultTotalQuestions
+                                }
+                            </div>
+
+                            <div
+                                style={
+                                    styles.scoreSummaryHint
+                                }
+                            >
+                                Accuracy:{" "}
+                                <strong>
+                                    {
+                                        resultAccuracy
+                                    }
+                                    %
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style={
+                            styles.resultGrid
+                        }
+                    >
+                        <ResultMetric
+                            label="Correct"
+                            value={
+                                resultCorrect
+                            }
+                            icon="check"
+                        />
+
+                        <ResultMetric
+                            label="Incorrect"
+                            value={
+                                resultIncorrect
+                            }
+                            icon="close"
+                        />
+
+                        <ResultMetric
+                            label="Skipped"
+                            value={
+                                resultSkipped
+                            }
+                            icon="questions"
+                        />
+                    </div>
+
+                    <div
+                        style={
+                            styles.rankCard
+                        }
+                    >
+                        <div
+                            style={
+                                styles.rankIcon
+                            }
+                        >
+                            <Icon
+                                name="target"
+                                size={22}
+                                stroke={
+                                    COLORS.green
+                                }
+                            />
+                        </div>
+
+                        <div>
+                            <div
+                                style={
+                                    styles.rankSmall
+                                }
+                            >
+                                PERFORMANCE
+                            </div>
+
+                            <div
+                                style={
+                                    styles.rankTitle
+                                }
+                            >
+                                Difficulty
+                            </div>
+
+                            <div
+                                style={
+                                    styles.rankNumber
+                                }
+                            >
+                                {
+                                    difficulty
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        style={
+                            styles.primaryResultButton
+                        }
+                        onClick={
+                            resetTests
+                        }
+                    >
+                        Take Another Test
+
+                        <Icon
+                            name="arrow"
+                            size={17}
+                            stroke="#FFFFFF"
+                        />
                     </button>
-                  );
-                }
-              )}
-            </div>
 
-            <button
-              type="button"
-              style={
-                styles.nextButton
-              }
-              onClick={nextQuestion}
-            >
-              {currentQuestion ===
-              demoQuestions.length -
-                1
-                ? "Submit Test"
-                : "Save & Next"}
+                    {onOpenSection && (
+                        <button
+                            type="button"
+                            style={
+                                styles.secondaryResultButton
+                            }
+                            onClick={() =>
+                                onOpenSection(
+                                    "analysis"
+                                )
+                            }
+                        >
+                            View Analysis
 
-              <Icon
-                name="arrow"
-                size={18}
-                stroke="#FFFFFF"
-              />
-            </button>
-          </div>
-        </main>
-      </Page>
-    );
-  }
+                            <Icon
+                                name="arrow"
+                                size={15}
+                                stroke={
+                                    COLORS.green
+                                }
+                            />
+                        </button>
+                    )}
+                </main>
+            </Page>
+        );
+    }
 
-  /* =======================================================
-     SUBMISSION SCREEN
-  ======================================================= */
-
-  if (
-    stage === "submission"
-  ) {
     return (
-      <Page>
-        <main
-          style={
-            styles.submissionPage
-          }
-        >
-          <div
-            style={
-              styles.submissionCard
-            }
-          >
-            <div
-              style={
-                styles.successRing
-              }
+        <Page>
+            <Header onBack={onBack} />
+            <main
+                style={
+                    styles.container
+                }
             >
-              <Icon
-                name="check"
-                size={55}
-                stroke="#FFFFFF"
-              />
-            </div>
+                <div
+                    style={
+                        styles.errorBox
+                    }
+                >
+                    <strong>
+                        Mock Test could not be loaded
+                    </strong>
 
-            <div
-              style={
-                styles.successEyebrow
-              }
-            >
-              TEST SUBMISSION
-            </div>
+                    <div
+                        style={{
+                            marginTop: 5,
+                        }}
+                    >
+                        Please return to the test list and try again.
+                    </div>
+                </div>
 
-            <h1
-              style={
-                styles.successTitle
-              }
-            >
-              Test Submitted
-              <br />
-              Successfully!
-            </h1>
-
-            <p
-              style={
-                styles.successText
-              }
-            >
-              Your test has been submitted. We
-              are analyzing your performance and
-              preparing your result.
-            </p>
-
-            <div
-              style={
-                styles.largeProgress
-              }
-            >
-              <div
-                style={{
-                  ...styles.largeProgressFill,
-                  width: `${submitProgress}%`,
-                }}
-              />
-            </div>
-
-            <div
-              style={
-                styles.analysisStatus
-              }
-            >
-              <span>
-                Analyzing your performance
-              </span>
-
-              <strong>
-                {submitProgress}%
-              </strong>
-            </div>
-
-            <div
-              style={
-                styles.secureNote
-              }
-            >
-              <Icon
-                name="shield"
-                size={16}
-                stroke={COLORS.green}
-              />
-
-              <span>
-                Your responses are being
-                processed securely.
-              </span>
-            </div>
-          </div>
-        </main>
-      </Page>
+                <button
+                    type="button"
+                    style={
+                        styles.primaryResultButton
+                    }
+                    onClick={resetTests}
+                >
+                    Back to Mock Tests
+                </button>
+            </main>
+        </Page>
     );
-  }
-
-  /* =======================================================
-     RESULT SCREEN
-  ======================================================= */
-
-  if (
-    stage === "result"
-  ) {
-    return (
-      <Page>
-        <Header
-          onBack={() => {
-            setStage("list");
-            setSelectedTest(null);
-          }}
-        />
-
-        <main style={styles.container}>
-          <div
-            style={styles.breadcrumb}
-          >
-            <span>Mock Test</span>
-            <span>›</span>
-            <strong>
-              Result Overview
-            </strong>
-          </div>
-
-          <div
-            style={
-              styles.resultHero
-            }
-          >
-            <div
-              style={{
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={styles.kicker}
-              >
-                PERFORMANCE
-              </div>
-
-              <h1
-                style={
-                  styles.pageTitle
-                }
-              >
-                Test Completed
-              </h1>
-
-              <p
-                style={
-                  styles.pageSubtitle
-                }
-              >
-                {selectedTest?.title}
-              </p>
-            </div>
-
-            <div
-              style={
-                styles.resultStatus
-              }
-            >
-              <Icon
-                name="check"
-                size={16}
-                stroke={COLORS.green}
-              />
-
-              Completed
-            </div>
-          </div>
-
-          <div
-            style={
-              styles.scoreCard
-            }
-          >
-            <div
-              style={
-                styles.scoreCircle
-              }
-            >
-              <div
-                style={
-                  styles.scoreValue
-                }
-              >
-                {percentage}%
-              </div>
-
-              <div
-                style={
-                  styles.scoreCaption
-                }
-              >
-                Accuracy
-              </div>
-            </div>
-
-            <div
-              style={
-                styles.scoreSummary
-              }
-            >
-              <div
-                style={
-                  styles.scoreSummaryLabel
-                }
-              >
-                Correct Answers
-              </div>
-
-              <div
-                style={
-                  styles.scoreSummaryValue
-                }
-              >
-                {score} /{" "}
-                {demoQuestions.length}
-              </div>
-
-              <div
-                style={
-                  styles.scoreSummaryHint
-                }
-              >
-                Keep practicing to improve your
-                accuracy.
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={
-              styles.resultGrid
-            }
-          >
-            <ResultMetric
-              label="Correct"
-              value={score}
-              icon="check"
-            />
-
-            <ResultMetric
-              label="Accuracy"
-              value={`${percentage}%`}
-              icon="target"
-            />
-
-            <ResultMetric
-              label="Estimated Rank"
-              value={predictedRank}
-              icon="trophy"
-            />
-          </div>
-
-          <div
-            style={styles.rankCard}
-          >
-            <div
-              style={styles.rankIcon}
-            >
-              <Icon
-                name="trophy"
-                size={24}
-                stroke={COLORS.green}
-              />
-            </div>
-
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={styles.rankSmall}
-              >
-                ESTIMATED PERFORMANCE
-              </div>
-
-              <div
-                style={styles.rankTitle}
-              >
-                Your Estimated Rank
-              </div>
-
-              <div
-                style={styles.rankNumber}
-              >
-                {predictedRank}
-              </div>
-            </div>
-
-            <Icon
-              name="trend"
-              size={26}
-              stroke={COLORS.green}
-            />
-          </div>
-
-          <button
-            type="button"
-            style={
-              styles.primaryResultButton
-            }
-            onClick={() => {
-              resetTests();
-            }}
-          >
-            Explore More Tests
-
-            <Icon
-              name="arrow"
-              size={18}
-              stroke="#FFFFFF"
-            />
-          </button>
-
-          <button
-            type="button"
-            style={
-              styles.secondaryResultButton
-            }
-            onClick={onBack}
-          >
-            Back to Dashboard
-          </button>
-        </main>
-      </Page>
-    );
-  }
-
-  return null;
 }
 
 /* =========================================================
-   SUB COMPONENTS
-========================================================= */
+   PAGE
+   ========================================================= */
 
-function Page({ children }) {
-  return (
-    <div style={styles.page}>
-      <div style={styles.mobileShell}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Header({ onBack, right }) {
-  return (
-    <header style={styles.header}>
-      <div
-        style={styles.headerInner}
-      >
-        <button
-          type="button"
-          onClick={onBack}
-          style={styles.headerBack}
-          aria-label="Go back"
-        >
-          <Icon
-            name="back"
-            size={20}
-            stroke={COLORS.navy}
-          />
-        </button>
-
+function Page({
+    children,
+}) {
+    return (
         <div
-          style={styles.brandBlock}
+            style={
+                styles.page
+            }
         >
-          <div style={styles.brand}>
-            ILS RANKER
-          </div>
-
-          <div
-            style={styles.tagline}
-          >
-            KNOW YOUR POTENTIAL
-          </div>
+            <div
+                style={
+                    styles.mobileShell
+                }
+            >
+                {children}
+            </div>
         </div>
-
-        {right}
-      </div>
-    </header>
-  );
+    );
 }
 
-function Stat({ icon, text }) {
-  return (
-    <div
-      style={
-        styles.featuredStat
-      }
-    >
-      <Icon
-        name={icon}
-        size={15}
-        stroke="#FFFFFF"
-      />
+/* =========================================================
+   HEADER
+   ========================================================= */
 
-      <span>{text}</span>
-    </div>
-  );
+function Header({
+    onBack,
+    right,
+}) {
+    return (
+        <header
+            style={
+                styles.header
+            }
+        >
+            {onBack ? (
+                <button
+                    type="button"
+                    style={
+                        styles.backButton
+                    }
+                    onClick={
+                        onBack
+                    }
+                >
+                    <Icon
+                        name="back"
+                        size={20}
+                    />
+                </button>
+            ) : (
+                <div
+                    style={{
+                        width: 36,
+                    }}
+                />
+            )}
+
+            <div
+                style={
+                    styles.brandWrap
+                }
+            >
+                <div
+                    style={
+                        styles.brand
+                    }
+                >
+                    ILS RANKER
+                </div>
+
+                <div
+                    style={
+                        styles.brandSub
+                    }
+                >
+                    EXAM PREPARATION
+                </div>
+            </div>
+
+            {right ? (
+                <div>
+                    {right}
+                </div>
+            ) : (
+                <div
+                    style={{
+                        width: 36,
+                    }}
+                />
+            )}
+        </header>
+    );
 }
+
+/* =========================================================
+   STAT
+   ========================================================= */
+
+function Stat({
+    icon,
+    text,
+}) {
+    return (
+        <div
+            style={
+                styles.stat
+            }
+        >
+            <Icon
+                name={icon}
+                size={14}
+                stroke={
+                    COLORS.green
+                }
+            />
+
+            <span>
+                {text}
+            </span>
+        </div>
+    );
+}
+
+/* =========================================================
+   TEST CARD
+   ========================================================= */
 
 function TestCard({
-  test,
-  onClick,
+    test,
+    onClick,
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={styles.testCard}
-    >
-      <div
-        style={
-          styles.testCardIcon
-        }
-      >
-        <Icon
-          name={test.icon}
-          size={22}
-          stroke={COLORS.green}
-        />
-      </div>
-
-      <div
-        style={
-          styles.testCardBody
-        }
-      >
-        <div
-          style={
-            styles.testCardTopLine
-          }
+    return (
+        <button
+            type="button"
+            onClick={
+                onClick
+            }
+            style={
+                styles.testCard
+            }
         >
-          <span
-            style={
-              styles.testNumber
-            }
-          >
-            {test.number}
-          </span>
+            <div
+                style={
+                    styles.testCardIcon
+                }
+            >
+                <Icon
+                    name={test.icon}
+                    size={22}
+                    stroke={
+                        COLORS.green
+                    }
+                />
+            </div>
 
-          <span
-            style={
-              styles.cardArrow
-            }
-          >
+            <div
+                style={{
+                    flex: 1,
+                    minWidth: 0,
+                }}
+            >
+                <div
+                    style={
+                        styles.testCardTop
+                    }
+                >
+                    <span
+                        style={
+                            styles.testNumber
+                        }
+                    >
+                        {
+                            test.number
+                        }
+                    </span>
+
+                    <span
+                        style={
+                            styles.testDifficulty
+                        }
+                    >
+                        {
+                            test.difficulty
+                        }
+                    </span>
+                </div>
+
+                <div
+                    style={
+                        styles.testCardTitle
+                    }
+                >
+                    {
+                        test.title
+                    }
+                </div>
+
+                <div
+                    style={
+                        styles.testCardMeta
+                    }
+                >
+                    {
+                        test.questions
+                    }{" "}
+                    Questions{" "}
+                    <span>
+                        •
+                    </span>{" "}
+                    {
+                        test.duration
+                    }
+                </div>
+            </div>
+
             <Icon
-              name="arrow"
-              size={17}
-              stroke={COLORS.green}
+                name="arrow"
+                size={17}
+                stroke={
+                    COLORS.muted
+                }
             />
-          </span>
-        </div>
-
-        <div
-          style={
-            styles.testCardTitle
-          }
-        >
-          {test.title}
-        </div>
-
-        <div
-          style={
-            styles.testCardDescription
-          }
-        >
-          {test.description}
-        </div>
-
-        <div
-          style={
-            styles.cardMetaRow
-          }
-        >
-          <MetaPill
-            icon="questions"
-            text={`${test.questions} Questions`}
-          />
-
-          <MetaPill
-            icon="clock"
-            text={test.duration}
-          />
-
-          <span
-            style={
-              styles.difficultyPill
-            }
-          >
-            {test.difficulty}
-          </span>
-        </div>
-      </div>
-    </button>
-  );
+        </button>
+    );
 }
 
-function MetaPill({
-  icon,
-  text,
-}) {
-  return (
-    <span
-      style={styles.metaPill}
-    >
-      <Icon
-        name={icon}
-        size={13}
-        stroke={COLORS.muted}
-      />
-
-      {text}
-    </span>
-  );
-}
+/* =========================================================
+   META
+   ========================================================= */
 
 function MetaBox({
-  icon,
-  label,
-  value,
+    icon,
+    label,
+    value,
 }) {
-  return (
-    <div style={styles.metaBox}>
-      <div
-        style={
-          styles.metaBoxIcon
-        }
-      >
-        <Icon
-          name={icon}
-          size={18}
-          stroke={COLORS.green}
-        />
-      </div>
+    return (
+        <div
+            style={
+                styles.metaBox
+            }
+        >
+            <div
+                style={
+                    styles.metaIcon
+                }
+            >
+                <Icon
+                    name={icon}
+                    size={16}
+                    stroke={
+                        COLORS.green
+                    }
+                />
+            </div>
 
-      <div
-        style={
-          styles.metaBoxLabel
-        }
-      >
-        {label}
-      </div>
+            <div
+                style={
+                    styles.metaLabel
+                }
+            >
+                {label}
+            </div>
 
-      <div
-        style={
-          styles.metaBoxValue
-        }
-      >
-        {value}
-      </div>
-    </div>
-  );
+            <div
+                style={
+                    styles.metaValue
+                }
+            >
+                {value}
+            </div>
+        </div>
+    );
 }
+
+/* =========================================================
+   INSTRUCTION
+   ========================================================= */
 
 function Instruction({
-  number,
-  text,
-  last,
+    number,
+    text,
+    last = false,
 }) {
-  return (
-    <div
-      style={{
-        ...styles.instruction,
-        borderBottom: last
-          ? "none"
-          : `1px solid ${COLORS.border}`,
-      }}
-    >
-      <div
-        style={
-          styles.instructionNumber
-        }
-      >
-        {number}
-      </div>
+    return (
+        <div
+            style={{
+                ...styles.instruction,
 
-      <div
-        style={
-          styles.instructionText
-        }
-      >
-        {text}
-      </div>
-    </div>
-  );
+                borderBottom:
+                    last
+                        ? "none"
+                        : `1px solid ${COLORS.border}`,
+            }}
+        >
+            <div
+                style={
+                    styles.instructionNumber
+                }
+            >
+                {number}
+            </div>
+
+            <div
+                style={
+                    styles.instructionText
+                }
+            >
+                {text}
+            </div>
+        </div>
+    );
 }
 
+/* =========================================================
+   RESULT METRIC
+   ========================================================= */
+
 function ResultMetric({
-  label,
-  value,
-  icon,
+    label,
+    value,
+    icon,
 }) {
-  return (
-    <div
-      style={styles.resultMetric}
-    >
-      <div
-        style={
-          styles.resultMetricIcon
-        }
-      >
-        <Icon
-          name={icon}
-          size={17}
-          stroke={COLORS.green}
-        />
-      </div>
+    const iconStroke =
+        label ===
+            "Incorrect"
+            ? COLORS.red
+            : COLORS.green;
 
-      <div
-        style={
-          styles.resultMetricLabel
-        }
-      >
-        {label}
-      </div>
+    return (
+        <div
+            style={
+                styles.resultMetric
+            }
+        >
+            <div
+                style={{
+                    ...styles.resultMetricIcon,
 
-      <div
-        style={
-          styles.resultMetricValue
-        }
-      >
-        {value}
-      </div>
-    </div>
-  );
+                    ...(label ===
+                        "Incorrect"
+                        ? {
+                            background:
+                                "#FFF5F5",
+                        }
+                        : {}),
+                }}
+            >
+                <Icon
+                    name={icon}
+                    size={16}
+                    stroke={
+                        iconStroke
+                    }
+                />
+            </div>
+
+            <div
+                style={
+                    styles.resultMetricLabel
+                }
+            >
+                {label}
+            </div>
+
+            <div
+                style={
+                    styles.resultMetricValue
+                }
+            >
+                {value}
+            </div>
+        </div>
+    );
 }
 
 /* =========================================================
    STYLES
-========================================================= */
+   ========================================================= */
 
 const styles = {
-  page: {
-    width: "100%",
-    minHeight: "100dvh",
-    background: COLORS.mint,
-    color: COLORS.navy,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "stretch",
-    boxSizing: "border-box",
-    fontFamily:
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  },
-
-  mobileShell: {
-    width: "100%",
-    maxWidth: 390,
-    minHeight: "100dvh",
-    background: COLORS.mint,
-    boxSizing: "border-box",
-    overflow: "visible",
-  },
-
-  header: {
-    background: COLORS.white,
-    borderBottom: `1px solid ${COLORS.border}`,
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
-  },
-
-  headerInner: {
-    width: "100%",
-    minHeight: 64,
-    padding: "12px 15px",
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    boxSizing: "border-box",
-  },
-
-  headerBack: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    border: `1px solid ${COLORS.border}`,
-    background: COLORS.white,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    flexShrink: 0,
-  },
-
-  brandBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  brand: {
-    fontSize: 17,
-    fontWeight: 900,
-    letterSpacing: 1,
-    lineHeight: 1,
-  },
-
-  tagline: {
-    fontSize: 9,
-    color: COLORS.muted,
-    letterSpacing: 0.7,
-    fontWeight: 800,
-    marginTop: 5,
-  },
-
-  container: {
-    width: "100%",
-    maxWidth: 390,
-    margin: "0 auto",
-    padding: "22px 15px 105px",
-    boxSizing: "border-box",
-  },
-
-  kicker: {
-    fontSize: 11,
-    letterSpacing: 1.2,
-    fontWeight: 900,
-    color: COLORS.green,
-    marginBottom: 7,
-  },
-
-  pageTitle: {
-    margin: 0,
-    fontSize: 30,
-    lineHeight: 1.15,
-    fontWeight: 900,
-    letterSpacing: -0.8,
-  },
-
-  pageSubtitle: {
-    margin: "9px 0 0",
-    color: COLORS.muted,
-    fontSize: 12,
-    lineHeight: 1.55,
-  },
-
-  featuredCard: {
-    marginTop: 22,
-    borderRadius: 22,
-    padding: 18,
-    background:
-      `linear-gradient(135deg, ${COLORS.green} 0%, #008C67 100%)`,
-    color: "#FFFFFF",
-    boxShadow:
-      "0 14px 30px rgba(0,112,80,0.18)",
-    boxSizing: "border-box",
-  },
-
-  featuredTop: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-
-  featuredIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    background: "#FFFFFF",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  featuredBadge: {
-    fontSize: 8,
-    fontWeight: 900,
-    letterSpacing: 0.7,
-    padding: "6px 8px",
-    borderRadius: 99,
-    background:
-      "rgba(255,255,255,0.16)",
-    border:
-      "1px solid rgba(255,255,255,0.2)",
-    whiteSpace: "nowrap",
-  },
-
-  featuredTitle: {
-    fontSize: 22,
-    lineHeight: 1.15,
-    fontWeight: 900,
-    marginTop: 17,
-  },
-
-  featuredDescription: {
-    marginTop: 7,
-    fontSize: 11.5,
-    lineHeight: 1.5,
-    opacity: 0.88,
-  },
-
-  featuredStats: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 7,
-    marginTop: 15,
-  },
-
-  featuredStat: {
-    display: "flex",
-    alignItems: "center",
-    gap: 5,
-    padding: "7px 8px",
-    borderRadius: 10,
-    background:
-      "rgba(255,255,255,0.11)",
-    border:
-      "1px solid rgba(255,255,255,0.14)",
-    fontSize: 8.5,
-    fontWeight: 800,
-  },
-
-  featuredButton: {
-    marginTop: 17,
-    border: "none",
-    borderRadius: 12,
-    background: "#FFFFFF",
-    color: COLORS.green,
-    padding: "12px 14px",
-    minWidth: 135,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 9,
-    fontWeight: 900,
-    fontSize: 11.5,
-    cursor: "pointer",
-  },
-
-  sectionHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginTop: 24,
-    marginBottom: 11,
-  },
-
-  sectionTitle: {
-    margin: 0,
-    fontSize: 16,
-    fontWeight: 900,
-  },
-
-  sectionCount: {
-    color: COLORS.muted,
-    fontSize: 9.5,
-    fontWeight: 750,
-  },
-
-  testCard: {
-    width: "100%",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
-    textAlign: "left",
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 17,
-    padding: 12,
-    marginBottom: 9,
-    boxShadow:
-      "0 5px 18px rgba(8,47,60,0.035)",
-    cursor: "pointer",
-    boxSizing: "border-box",
-  },
-
-  testCardIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    background: COLORS.mint,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  testCardBody: {
-    minWidth: 0,
-    flex: 1,
-  },
-
-  testCardTopLine: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  testNumber: {
-    fontSize: 8,
-    fontWeight: 900,
-    color: COLORS.green,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-
-  cardArrow: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    background: COLORS.mint,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  testCardTitle: {
-    marginTop: 4,
-    fontSize: 12.5,
-    lineHeight: 1.2,
-    fontWeight: 850,
-    color: COLORS.navy,
-  },
-
-  testCardDescription: {
-    marginTop: 4,
-    color: COLORS.muted,
-    fontSize: 9.5,
-    lineHeight: 1.45,
-  },
-
-  cardMetaRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 8,
-  },
-
-  metaPill: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "5px 6px",
-    background: "#F8FAF9",
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 7,
-    color: COLORS.muted,
-    fontSize: 7.5,
-    fontWeight: 750,
-  },
-
-  difficultyPill: {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "5px 6px",
-    background: COLORS.mint,
-    color: COLORS.green,
-    borderRadius: 7,
-    fontSize: 7.5,
-    fontWeight: 800,
-  },
-
-  tipCard: {
-    marginTop: 17,
-    padding: 13,
-    borderRadius: 16,
-    background: COLORS.softMint,
-    display: "flex",
-    gap: 9,
-    alignItems: "flex-start",
-    boxSizing: "border-box",
-  },
-
-  tipIcon: {
-    width: 35,
-    height: 35,
-    borderRadius: 10,
-    background: COLORS.white,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  tipTitle: {
-    fontSize: 11.5,
-    fontWeight: 900,
-  },
-
-  tipText: {
-    marginTop: 4,
-    color: COLORS.muted,
-    fontSize: 9.5,
-    lineHeight: 1.5,
-  },
-
-  breadcrumb: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    fontSize: 9,
-    color: COLORS.muted,
-    marginBottom: 13,
-  },
-
-  testHero: {
-    display: "flex",
-    gap: 11,
-    alignItems: "flex-start",
-  },
-
-  testHeroIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 15,
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    boxShadow:
-      "0 4px 14px rgba(8,47,60,0.04)",
-  },
-
-  testHeroEyebrow: {
-    fontSize: 8.5,
-    color: COLORS.green,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-
-  testHeroTitle: {
-    margin: "5px 0 0",
-    fontSize: 20,
-    lineHeight: 1.2,
-    fontWeight: 900,
-    letterSpacing: -0.4,
-  },
-
-  testHeroDescription: {
-    margin: "7px 0 0",
-    color: COLORS.muted,
-    fontSize: 11,
-    lineHeight: 1.5,
-  },
-
-  metaGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(3, minmax(0, 1fr))",
-    gap: 7,
-    marginTop: 17,
-  },
-
-  metaBox: {
-    minWidth: 0,
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 15,
-    padding: 11,
-    boxSizing: "border-box",
-  },
-
-  metaBoxIcon: {
-    width: 31,
-    height: 31,
-    borderRadius: 9,
-    background: COLORS.mint,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  metaBoxLabel: {
-    marginTop: 8,
-    fontSize: 8,
-    color: COLORS.muted,
-    fontWeight: 750,
-  },
-
-  metaBoxValue: {
-    marginTop: 3,
-    fontSize: 10.5,
-    fontWeight: 900,
-    lineHeight: 1.25,
-  },
-
-  tabs: {
-    display: "flex",
-    gap: 4,
-    padding: 4,
-    marginTop: 16,
-    borderRadius: 12,
-    background: COLORS.softMint,
-  },
-
-  tab: {
-    flex: 1,
-    border: "none",
-    background: "transparent",
-    padding: "9px 10px",
-    borderRadius: 8,
-    color: COLORS.muted,
-    fontSize: 10,
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-
-  activeTab: {
-    background: COLORS.white,
-    color: COLORS.green,
-    boxShadow:
-      "0 2px 7px rgba(8,47,60,0.06)",
-  },
-
-  panel: {
-    marginTop: 10,
-    padding: 14,
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 17,
-    boxSizing: "border-box",
-  },
-
-  panelHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 8,
-    alignItems: "flex-start",
-    marginBottom: 6,
-  },
-
-  panelTitle: {
-    margin: 0,
-    fontSize: 13,
-    fontWeight: 900,
-  },
-
-  panelSubtitle: {
-    margin: "4px 0 0",
-    color: COLORS.muted,
-    fontSize: 9,
-  },
-
-  panelBadge: {
-    padding: "5px 7px",
-    borderRadius: 7,
-    background: COLORS.mint,
-    color: COLORS.green,
-    fontSize: 7,
-    fontWeight: 900,
-    textTransform: "uppercase",
-    whiteSpace: "nowrap",
-  },
-
-  subjectList: {
-    marginTop: 5,
-  },
-
-  subjectItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 9,
-    padding: "11px 0",
-  },
-
-  subjectAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 900,
-    fontSize: 16,
-    flexShrink: 0,
-  },
-
-  subjectName: {
-    fontSize: 11,
-    fontWeight: 850,
-  },
-
-  subjectMeta: {
-    marginTop: 3,
-    color: COLORS.muted,
-    fontSize: 8.5,
-  },
-
-  checkCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: "50%",
-    background: COLORS.green,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  infoCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: "50%",
-    background: COLORS.mint,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  instruction: {
-    display: "flex",
-    gap: 10,
-    padding: "11px 0",
-  },
-
-  instructionNumber: {
-    width: 27,
-    height: 27,
-    borderRadius: 8,
-    background: COLORS.mint,
-    color: COLORS.green,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 8,
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  instructionText: {
-    fontSize: 9.5,
-    color: COLORS.muted,
-    lineHeight: 1.55,
-    paddingTop: 2,
-  },
-
-  readyCard: {
-    marginTop: 11,
-    padding: 14,
-    borderRadius: 17,
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    boxShadow:
-      "0 5px 18px rgba(8,47,60,0.04)",
-  },
-
-  readyHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-
-  readyTitle: {
-    fontSize: 12,
-    fontWeight: 900,
-  },
-
-  readySubtitle: {
-    color: COLORS.muted,
-    fontSize: 8.5,
-    marginTop: 4,
-  },
-
-  readyCheck: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    background: COLORS.mint,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  startButton: {
-    marginTop: 12,
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "none",
-    background: COLORS.green,
-    color: "#FFFFFF",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    fontSize: 11.5,
-    fontWeight: 900,
-    cursor: "pointer",
-    boxShadow:
-      "0 8px 18px rgba(0,112,80,0.16)",
-  },
-
-  testCounter: {
-    padding: "6px 8px",
-    background: COLORS.mint,
-    borderRadius: 8,
-    color: COLORS.green,
-    fontSize: 9,
-    fontWeight: 900,
-  },
-
-  examBar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    padding: 12,
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 15,
-  },
-
-  examLabel: {
-    fontSize: 7.5,
-    letterSpacing: 0.9,
-    color: COLORS.green,
-    fontWeight: 900,
-  },
-
-  examName: {
-    marginTop: 4,
-    fontSize: 10.5,
-    lineHeight: 1.25,
-    fontWeight: 850,
-  },
-
-  timerPill: {
-    display: "flex",
-    alignItems: "center",
-    gap: 5,
-    padding: "7px 8px",
-    borderRadius: 8,
-    background: "#FFF8E8",
-    color: COLORS.yellow,
-    fontSize: 9,
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  progressWrapper: {
-    marginTop: 14,
-  },
-
-  progressTrack: {
-    height: 6,
-    borderRadius: 30,
-    overflow: "hidden",
-    background: COLORS.softMint,
-  },
-
-  progressFill: {
-    height: "100%",
-    borderRadius: 30,
-    background: COLORS.green,
-    transition:
-      "width 220ms ease",
-  },
-
-  progressText: {
-    marginTop: 6,
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 8,
-    color: COLORS.muted,
-    fontSize: 8.5,
-    fontWeight: 700,
-  },
-
-  questionPanel: {
-    marginTop: 14,
-    padding: 15,
-    borderRadius: 17,
-    background: COLORS.white,
-    border: `1px solid ${COLORS.border}`,
-    boxSizing: "border-box",
-  },
-
-  questionLabel: {
-    color: COLORS.green,
-    fontSize: 8,
-    letterSpacing: 0.9,
-    fontWeight: 900,
-  },
-
-  questionText: {
-    margin: "9px 0 0",
-    fontSize: 16,
-    lineHeight: 1.4,
-    fontWeight: 900,
-    letterSpacing: -0.2,
-  },
-
-  options: {
-    marginTop: 16,
-  },
-
-  optionButton: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    gap: 9,
-    textAlign: "left",
-    border: `1px solid ${COLORS.border}`,
-    background: COLORS.white,
-    color: COLORS.navy,
-    borderRadius: 12,
-    padding: "11px 12px",
-    marginBottom: 8,
-    fontSize: 10.5,
-    lineHeight: 1.35,
-    fontWeight: 650,
-    cursor: "pointer",
-    boxSizing: "border-box",
-  },
-
-  selectedOption: {
-    background: COLORS.mint,
-    border:
-      `2px solid ${COLORS.green}`,
-    color: COLORS.green,
-    fontWeight: 850,
-  },
-
-  optionLetter: {
-    width: 27,
-    height: 27,
-    borderRadius: 8,
-    background: "#F4F7F6",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 10,
-    fontWeight: 900,
-    color: COLORS.muted,
-    flexShrink: 0,
-  },
-
-  selectedLetter: {
-    color: "#FFFFFF",
-    background: COLORS.green,
-  },
-
-  optionTick: {
-    marginLeft: "auto",
-    width: 21,
-    height: 21,
-    borderRadius: "50%",
-    background: COLORS.green,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  nextButton: {
-    marginTop: 4,
-    width: "100%",
-    padding: "13px 14px",
-    border: "none",
-    borderRadius: 12,
-    background: COLORS.green,
-    color: "#FFFFFF",
-    fontSize: 11.5,
-    fontWeight: 900,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 9,
-    cursor: "pointer",
-  },
-
-  submissionPage: {
-    minHeight:
-      "calc(100dvh - 64px)",
-    padding:
-      "24px 15px 105px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxSizing: "border-box",
-  },
-
-  submissionCard: {
-    width: "100%",
-    maxWidth: 360,
-    textAlign: "center",
-    background: COLORS.white,
-    border:
-      `1px solid ${COLORS.border}`,
-    borderRadius: 22,
-    padding: "30px 18px",
-    boxShadow:
-      "0 18px 45px rgba(8,47,60,0.08)",
-    boxSizing: "border-box",
-  },
-
-  successRing: {
-    width: 86,
-    height: 86,
-    borderRadius: "50%",
-    margin: "0 auto",
-    background: COLORS.green,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow:
-      "0 14px 28px rgba(0,112,80,0.18)",
-  },
-
-  successEyebrow: {
-    marginTop: 22,
-    color: COLORS.green,
-    fontSize: 8,
-    fontWeight: 900,
-    letterSpacing: 1,
-  },
-
-  successTitle: {
-    margin: "7px 0 0",
-    fontSize: 23,
-    lineHeight: 1.22,
-    fontWeight: 900,
-  },
-
-  successText: {
-    margin: "10px auto 0",
-    maxWidth: 320,
-    color: COLORS.muted,
-    fontSize: 10.5,
-    lineHeight: 1.6,
-  },
-
-  largeProgress: {
-    height: 9,
-    background: COLORS.softMint,
-    borderRadius: 30,
-    overflow: "hidden",
-    marginTop: 23,
-  },
-
-  largeProgressFill: {
-    height: "100%",
-    borderRadius: 30,
-    background: COLORS.green,
-    transition:
-      "width 80ms linear",
-  },
-
-  analysisStatus: {
-    marginTop: 8,
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 8,
-    color: COLORS.muted,
-    fontSize: 8.5,
-    fontWeight: 750,
-  },
-
-  secureNote: {
-    marginTop: 18,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-    color: COLORS.muted,
-    fontSize: 8.5,
-  },
-
-  resultHero: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: 9,
-  },
-
-  resultStatus: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 5,
-    padding: "7px 8px",
-    borderRadius: 9,
-    background: COLORS.mint,
-    color: COLORS.green,
-    fontSize: 8,
-    fontWeight: 850,
-    whiteSpace: "nowrap",
-    flexShrink: 0,
-  },
-
-  scoreCard: {
-    marginTop: 16,
-    padding: 15,
-    borderRadius: 17,
-    background: COLORS.white,
-    border:
-      `1px solid ${COLORS.border}`,
-    display: "flex",
-    alignItems: "center",
-    gap: 14,
-    boxSizing: "border-box",
-  },
-
-  scoreCircle: {
-    width: 92,
-    height: 92,
-    borderRadius: "50%",
-    background: COLORS.mint,
-    border:
-      `8px solid ${COLORS.green}`,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  scoreValue: {
-    fontSize: 22,
-    fontWeight: 900,
-  },
-
-  scoreCaption: {
-    marginTop: 2,
-    fontSize: 8,
-    color: COLORS.muted,
-    fontWeight: 800,
-  },
-
-  scoreSummary: {
-    minWidth: 0,
-    flex: 1,
-  },
-
-  scoreSummaryLabel: {
-    color: COLORS.muted,
-    fontSize: 8.5,
-    fontWeight: 750,
-  },
-
-  scoreSummaryValue: {
-    marginTop: 4,
-    fontSize: 19,
-    fontWeight: 900,
-  },
-
-  scoreSummaryHint: {
-    marginTop: 5,
-    color: COLORS.muted,
-    fontSize: 8.5,
-    lineHeight: 1.45,
-  },
-
-  resultGrid: {
-    marginTop: 10,
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(3, minmax(0, 1fr))",
-    gap: 7,
-  },
-
-  resultMetric: {
-    minWidth: 0,
-    background: COLORS.white,
-    border:
-      `1px solid ${COLORS.border}`,
-    borderRadius: 14,
-    padding: 10,
-    boxSizing: "border-box",
-  },
-
-  resultMetricIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
-    background: COLORS.mint,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  resultMetricLabel: {
-    marginTop: 8,
-    color: COLORS.muted,
-    fontSize: 7.5,
-    fontWeight: 750,
-  },
-
-  resultMetricValue: {
-    marginTop: 3,
-    fontSize: 12.5,
-    lineHeight: 1.25,
-    fontWeight: 900,
-  },
-
-  rankCard: {
-    marginTop: 11,
-    background: COLORS.softMint,
-    borderRadius: 17,
-    padding: 14,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  rankIcon: {
-    width: 41,
-    height: 41,
-    borderRadius: 12,
-    background: COLORS.white,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  rankSmall: {
-    fontSize: 7.5,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    color: COLORS.green,
-  },
-
-  rankTitle: {
-    marginTop: 3,
-    fontSize: 10.5,
-    fontWeight: 850,
-  },
-
-  rankNumber: {
-    marginTop: 2,
-    color: COLORS.green,
-    fontSize: 18,
-    fontWeight: 900,
-  },
-
-  primaryResultButton: {
-    marginTop: 16,
-    width: "100%",
-    border: "none",
-    borderRadius: 12,
-    padding: "13px 14px",
-    background: COLORS.green,
-    color: "#FFFFFF",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 9,
-    fontSize: 11.5,
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  secondaryResultButton: {
-    marginTop: 8,
-    width: "100%",
-    border:
-      `1px solid ${COLORS.green}`,
-    borderRadius: 12,
-    padding: "12px 14px",
-    background: COLORS.white,
-    color: COLORS.green,
-    fontSize: 10.5,
-    fontWeight: 850,
-    cursor: "pointer",
-  },
+    page: {
+        minHeight:
+            "100dvh",
+        width: "100%",
+        background:
+            "transparent",
+        display: "flex",
+        justifyContent:
+            "center",
+        boxSizing:
+            "border-box",
+    },
+
+    mobileShell: {
+        width:
+            "100%",
+        maxWidth: "430px",
+        minHeight:
+            "100dvh",
+        background:
+            "transparent",
+        position:
+            "relative",
+        boxSizing:
+            "border-box",
+    },
+
+    header: {
+        minHeight: 66,
+        padding:
+            "11px 15px",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "space-between",
+        gap: 10,
+        background:
+            "rgba(6, 49, 43, 0.85)",
+        backdropFilter:
+            "blur(16px)",
+        WebkitBackdropFilter:
+            "blur(16px)",
+        borderBottom:
+            `1px solid ${COLORS.border}`,
+        boxSizing:
+            "border-box",
+        position:
+            "sticky",
+        top: 0,
+        zIndex: 20,
+    },
+
+    backButton: {
+        width: 36,
+        height: 36,
+        border:
+            `1px solid ${COLORS.border}`,
+        borderRadius: 11,
+        background:
+            "rgba(255, 255, 255, 0.08)",
+        color:
+            "#10E79D",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        cursor:
+            "pointer",
+        flexShrink: 0,
+    },
+
+    brandWrap: {
+        textAlign:
+            "center",
+        flex: 1,
+    },
+
+    brand: {
+        fontSize: 15,
+        fontWeight: 950,
+        letterSpacing:
+            1.5,
+        color:
+            COLORS.navy,
+    },
+
+    brandSub: {
+        marginTop: 2,
+        fontSize: 7,
+        fontWeight: 850,
+        letterSpacing:
+            1.2,
+        color:
+            COLORS.muted,
+    },
+
+    container: {
+        padding:
+            "20px 16px 145px",
+        boxSizing:
+            "border-box",
+    },
+
+    kicker: {
+        color:
+            COLORS.green,
+        fontSize: 10,
+        fontWeight: 900,
+        letterSpacing:
+            1.4,
+        textTransform: "uppercase",
+    },
+
+    pageTitle: {
+        margin:
+            "8px 0 0",
+        color:
+            "#FFFFFF",
+        fontSize: 28,
+        lineHeight: 1.15,
+        fontWeight: 900,
+        letterSpacing: "-0.5px",
+    },
+
+    pageSubtitle: {
+        margin:
+            "8px 0 0",
+        color:
+            COLORS.muted,
+        fontSize: 12.5,
+        lineHeight: 1.5,
+        maxWidth: 370,
+    },
+
+    featuredCard: {
+        marginTop: 18,
+        borderRadius: 24,
+        padding: 18,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.12)`,
+        boxShadow:
+            "0 15px 36px rgba(0, 0, 0, 0.4)",
+    },
+
+    featuredTop: {
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "space-between",
+    },
+
+    featuredIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 15,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        border:
+            `1px solid rgba(16, 231, 157, 0.25)`,
+    },
+
+    featuredBadge: {
+        padding:
+            "7px 11px",
+        borderRadius: 9,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+        border:
+            "1px solid rgba(16, 231, 157, 0.3)",
+        color:
+            COLORS.green,
+        fontSize: 8.5,
+        fontWeight: 900,
+        letterSpacing:
+            0.8,
+    },
+
+    featuredTitle: {
+        marginTop: 16,
+        fontSize: 22,
+        fontWeight: 950,
+        color:
+            "#FFFFFF",
+    },
+
+    featuredDescription: {
+        marginTop: 6,
+        color:
+            "rgba(226, 232, 240, 0.75)",
+        fontSize: 11,
+        lineHeight: 1.5,
+    },
+
+    featuredStats: {
+        marginTop: 15,
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+        gap: 7,
+    },
+
+    stat: {
+        minHeight: 34,
+        padding:
+            "7px 6px",
+        borderRadius: 11,
+        background:
+            "rgba(255, 255, 255, 0.06)",
+        border:
+            "1px solid rgba(255, 255, 255, 0.1)",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        gap: 5,
+        color:
+            "#FFFFFF",
+        fontSize: 10,
+        fontWeight: 800,
+        textAlign:
+            "center",
+    },
+
+    featuredButton: {
+        marginTop: 15,
+        width:
+            "100%",
+        padding:
+            "13px 15px",
+        border: "none",
+        borderRadius: 13,
+        background:
+            "linear-gradient(135deg, #10E79D, #007050)",
+        color:
+            "#010F0E",
+        fontSize: 13,
+        fontWeight: 900,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        gap: 9,
+        cursor:
+            "pointer",
+        boxShadow:
+            "0 6px 20px rgba(16, 231, 157, 0.35)",
+    },
+
+    sectionHeader: {
+        marginTop: 24,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "space-between",
+    },
+
+    sectionTitle: {
+        margin: 0,
+        color:
+            COLORS.navy,
+        fontSize: 15,
+        fontWeight: 900,
+    },
+
+    sectionCount: {
+        color:
+            COLORS.muted,
+        fontSize: 9,
+        fontWeight: 800,
+    },
+
+    testCard: {
+        width:
+            "100%",
+        marginTop: 9,
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        borderRadius: 18,
+        padding:
+            "13px 12px",
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 11,
+        textAlign:
+            "left",
+        cursor:
+            "pointer",
+        boxSizing:
+            "border-box",
+    },
+
+    testCardIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 13,
+        background:
+            COLORS.mint,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    testCardTop: {
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        alignItems:
+            "center",
+        gap: 8,
+    },
+
+    testNumber: {
+        color:
+            COLORS.green,
+        fontSize: 9.5,
+        fontWeight: 850,
+        letterSpacing:
+            0.5,
+    },
+
+    testDifficulty: {
+        color:
+            COLORS.muted,
+        fontSize: 9.5,
+        fontWeight: 750,
+    },
+
+    testCardTitle: {
+        marginTop: 4,
+        color:
+            "#FFFFFF",
+        fontSize: 13.5,
+        fontWeight: 850,
+        lineHeight: 1.3,
+    },
+
+    testCardMeta: {
+        marginTop: 4,
+        color:
+            COLORS.muted,
+        fontSize: 10.5,
+        fontWeight: 600,
+    },
+
+    tipCard: {
+        marginTop: 15,
+        padding: 14,
+        borderRadius: 16,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        display:
+            "flex",
+        gap: 10,
+        alignItems:
+            "flex-start",
+    },
+
+    tipIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 11,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    tipTitle: {
+        fontSize: 11,
+        fontWeight: 900,
+        color:
+            "#FFFFFF",
+    },
+
+    tipText: {
+        marginTop: 4,
+        fontSize: 9.5,
+        lineHeight: 1.45,
+        color:
+            COLORS.muted,
+    },
+
+    breadcrumb: {
+        display:
+            "flex",
+        gap: 6,
+        alignItems:
+            "center",
+        color:
+            COLORS.muted,
+        fontSize: 9,
+    },
+
+    testHero: {
+        marginTop: 15,
+        display:
+            "flex",
+        alignItems:
+            "flex-start",
+        gap: 12,
+    },
+
+    testHeroIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 15,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+        border:
+            `1px solid rgba(16, 231, 157, 0.3)`,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    testHeroEyebrow: {
+        color:
+            COLORS.green,
+        fontSize: 8,
+        fontWeight: 900,
+        letterSpacing:
+            0.8,
+    },
+
+    testHeroTitle: {
+        margin:
+            "5px 0 0",
+        fontSize: 21,
+        lineHeight: 1.22,
+        fontWeight: 950,
+        color:
+            "#FFFFFF",
+    },
+
+    testHeroDescription: {
+        margin:
+            "6px 0 0",
+        fontSize: 10.5,
+        lineHeight: 1.5,
+        color:
+            COLORS.muted,
+    },
+
+    metaGrid: {
+        marginTop: 17,
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+        gap: 7,
+    },
+
+    metaBox: {
+        padding:
+            "11px 7px",
+        borderRadius: 15,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        textAlign:
+            "center",
+    },
+
+    metaIcon: {
+        width: 30,
+        height: 30,
+        margin:
+            "0 auto",
+        borderRadius: 10,
+        background:
+            COLORS.mint,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+    },
+
+    metaLabel: {
+        marginTop: 7,
+        color:
+            COLORS.muted,
+        fontSize: 8.5,
+        fontWeight: 750,
+    },
+
+    metaValue: {
+        marginTop: 3,
+        color:
+            "#FFFFFF",
+        fontSize: 13,
+        fontWeight: 900,
+    },
+
+    difficultyCard: {
+        marginTop: 14,
+        padding: 15,
+        borderRadius: 19,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+    },
+
+    difficultyHeader: {
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "space-between",
+        gap: 10,
+    },
+
+    difficultyTitle: {
+        color:
+            "#FFFFFF",
+        fontSize: 13,
+        fontWeight: 900,
+    },
+
+    difficultySubtitle: {
+        marginTop: 4,
+        color:
+            COLORS.muted,
+        fontSize: 9.5,
+        lineHeight: 1.4,
+    },
+
+    difficultyBadge: {
+        flexShrink: 0,
+        padding:
+            "6px 9px",
+        borderRadius: 9,
+        background:
+            COLORS.mint,
+        color:
+            COLORS.green,
+        fontSize: 8,
+        fontWeight: 900,
+    },
+
+    difficultyOptions: {
+        marginTop: 12,
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(4, minmax(0, 1fr))",
+        gap: 6,
+    },
+
+    difficultyButton: {
+        padding:
+            "9px 4px",
+        borderRadius: 10,
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        background:
+            "rgba(255, 255, 255, 0.06)",
+        color:
+            "#FFFFFF",
+        fontSize: 9.5,
+        fontWeight: 850,
+        cursor:
+            "pointer",
+    },
+
+    difficultyButtonActive: {
+        background:
+            "linear-gradient(135deg, #10E79D, #007050)",
+        color:
+            "#010F0E",
+        border:
+            `1px solid ${COLORS.green}`,
+        boxShadow:
+            "0 4px 12px rgba(16, 231, 157, 0.3)",
+    },
+
+    randomNote: {
+        marginTop: 10,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 6,
+        color:
+            COLORS.muted,
+        fontSize: 8.5,
+        lineHeight: 1.4,
+    },
+
+    errorBox: {
+        marginTop: 13,
+        padding:
+            "12px 13px",
+        borderRadius: 14,
+        background:
+            "#FFF5F5",
+        border:
+            "1px solid #F1D8D8",
+        color:
+            COLORS.red,
+        fontSize: 10,
+        lineHeight: 1.5,
+    },
+
+    infoBox: {
+        marginTop: 13,
+        padding:
+            "11px 13px",
+        borderRadius: 14,
+        background:
+            COLORS.softMint,
+        border:
+            `1px solid ${COLORS.border}`,
+        color:
+            COLORS.navy,
+        fontSize: 9.5,
+        lineHeight: 1.5,
+    },
+
+    tabs: {
+        marginTop: 16,
+        display:
+            "flex",
+        gap: 4,
+        padding: 4,
+        borderRadius: 12,
+        background:
+            COLORS.softMint,
+    },
+
+    tab: {
+        flex: 1,
+        padding:
+            "9px 8px",
+        border: "none",
+        borderRadius: 9,
+        background:
+            "transparent",
+        color:
+            COLORS.muted,
+        fontSize: 9.5,
+        fontWeight: 850,
+        cursor:
+            "pointer",
+    },
+
+    activeTab: {
+        background:
+            "rgba(16, 231, 157, 0.2)",
+        color:
+            COLORS.green,
+        boxShadow:
+            "0 2px 8px rgba(16, 231, 157, 0.2)",
+    },
+
+    panel: {
+        marginTop: 10,
+        borderRadius: 19,
+        padding: 15,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+    },
+
+    panelHeader: {
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "space-between",
+        gap: 10,
+    },
+
+    panelTitle: {
+        margin: 0,
+        color:
+            COLORS.navy,
+        fontSize: 13,
+        fontWeight: 900,
+    },
+
+    panelSubtitle: {
+        margin:
+            "4px 0 0",
+        color:
+            COLORS.muted,
+        fontSize: 9,
+    },
+
+    panelBadge: {
+        padding:
+            "6px 8px",
+        borderRadius: 9,
+        background:
+            COLORS.mint,
+        color:
+            COLORS.green,
+        fontSize: 8,
+        fontWeight: 900,
+    },
+
+    subjectList: {
+        marginTop: 9,
+    },
+
+    subjectItem: {
+        padding:
+            "11px 0",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 10,
+    },
+
+    subjectAvatar: {
+        width: 36,
+        height: 36,
+        borderRadius: 11,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        fontSize: 14,
+        fontWeight: 900,
+        flexShrink: 0,
+    },
+
+    subjectName: {
+        color:
+            COLORS.navy,
+        fontSize: 11,
+        fontWeight: 850,
+    },
+
+    subjectMeta: {
+        marginTop: 3,
+        color:
+            COLORS.muted,
+        fontSize: 8.5,
+    },
+
+    checkCircle: {
+        width: 23,
+        height: 23,
+        borderRadius:
+            "50%",
+        background:
+            COLORS.green,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+    },
+
+    infoCircle: {
+        width: 30,
+        height: 30,
+        borderRadius:
+            "50%",
+        background:
+            COLORS.mint,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+    },
+
+    instruction: {
+        padding:
+            "12px 0",
+        display:
+            "flex",
+        gap: 10,
+    },
+
+    instructionNumber: {
+        width: 27,
+        height: 27,
+        borderRadius: 9,
+        background:
+            COLORS.mint,
+        color:
+            COLORS.green,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        fontSize: 8,
+        fontWeight: 900,
+        flexShrink: 0,
+    },
+
+    instructionText: {
+        flex: 1,
+        color:
+            COLORS.muted,
+        fontSize: 9.5,
+        lineHeight: 1.5,
+    },
+
+    readyCard: {
+        marginTop: 14,
+        padding: 15,
+        borderRadius: 19,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid ${COLORS.border}`,
+    },
+
+    readyHeader: {
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        alignItems:
+            "center",
+        gap: 10,
+    },
+
+    readyTitle: {
+        color:
+            COLORS.navy,
+        fontSize: 13,
+        fontWeight: 900,
+    },
+
+    readySubtitle: {
+        marginTop: 4,
+        color:
+            COLORS.muted,
+        fontSize: 9,
+        lineHeight: 1.4,
+    },
+
+    readyCheck: {
+        width: 35,
+        height: 35,
+        borderRadius: 11,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+        border:
+            `1px solid rgba(16, 231, 157, 0.3)`,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    startButton: {
+        marginTop: 13,
+        width:
+            "100%",
+        padding:
+            "13px 15px",
+        border: "none",
+        borderRadius: 13,
+        background:
+            "linear-gradient(135deg, #10E79D, #007050)",
+        color:
+            "#010F0E",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        gap: 8,
+        fontSize: 13,
+        fontWeight: 900,
+        boxShadow:
+            "0 6px 20px rgba(16, 231, 157, 0.35)",
+        cursor:
+            "pointer",
+    },
+
+    examBar: {
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        alignItems:
+            "center",
+        gap: 10,
+    },
+
+    examHeaderRight: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: 6,
+    },
+
+    examModeBar: {
+        marginBottom: 9,
+        padding: "8px 10px",
+        borderRadius: 10,
+        background: "rgba(16, 231, 157, 0.15)",
+        border: "1px solid rgba(16, 231, 157, 0.3)",
+        color: COLORS.green,
+        fontSize: 8.5,
+        fontWeight: 900,
+        letterSpacing: 0.4,
+        textAlign: "center",
+    },
+
+    examWarning: {
+        marginBottom: 9,
+        padding: "9px 10px",
+        borderRadius: 10,
+        background: "rgba(244, 63, 94, 0.12)",
+        border: "1px solid rgba(244, 63, 94, 0.25)",
+        color: "#FB7185",
+        fontSize: 9,
+        lineHeight: 1.4,
+        fontWeight: 800,
+    },
+
+    examLabel: {
+        color:
+            COLORS.green,
+        fontSize: 8,
+        fontWeight: 900,
+        letterSpacing:
+            0.9,
+    },
+
+    examName: {
+        marginTop: 4,
+        color:
+            COLORS.navy,
+        fontSize: 13,
+        fontWeight: 900,
+        whiteSpace:
+            "nowrap",
+        overflow:
+            "hidden",
+        textOverflow:
+            "ellipsis",
+    },
+
+    timerPill: {
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 5,
+        padding:
+            "8px 9px",
+        borderRadius: 11,
+        background:
+            COLORS.mint,
+        border:
+            `1px solid rgba(16, 231, 157, 0.3)`,
+        color:
+            COLORS.green,
+        fontSize: 10,
+        fontWeight: 900,
+        flexShrink: 0,
+    },
+
+    testCounter: {
+        minWidth: 43,
+        padding:
+            "7px 8px",
+        borderRadius: 10,
+        background:
+            COLORS.mint,
+        color:
+            COLORS.green,
+        fontSize: 9,
+        fontWeight: 900,
+        textAlign:
+            "center",
+    },
+
+    progressWrapper: {
+        marginTop: 15,
+    },
+
+    progressTrack: {
+        height: 7,
+        borderRadius: 20,
+        background:
+            "rgba(255, 255, 255, 0.08)",
+        overflow:
+            "hidden",
+    },
+
+    progressFill: {
+        height:
+            "100%",
+        borderRadius: 20,
+        background:
+            COLORS.green,
+        transition:
+            "width 200ms ease",
+    },
+
+    progressText: {
+        marginTop: 6,
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        color:
+            COLORS.muted,
+        fontSize: 8.5,
+        fontWeight: 750,
+    },
+
+    attemptBar: {
+        marginTop: 10,
+        padding:
+            "8px 10px",
+        borderRadius: 10,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        color:
+            COLORS.muted,
+        fontSize: 8.5,
+    },
+
+    questionPalette: {
+        marginTop: 10,
+        padding: 12,
+        borderRadius: 15,
+        background: "rgba(255, 255, 255, 0.05)",
+        border: `1px solid rgba(255, 255, 255, 0.1)`,
+    },
+
+    paletteHeader: {
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 8,
+        flexWrap: "wrap",
+    },
+
+    paletteTitle: {
+        color: COLORS.navy,
+        fontSize: 10,
+        fontWeight: 900,
+    },
+
+    paletteLegend: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        flexWrap: "wrap",
+        gap: 7,
+        color: COLORS.muted,
+        fontSize: 7.5,
+        lineHeight: 1.3,
+    },
+
+    legendItem: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        whiteSpace: "nowrap",
+    },
+
+    legendDot: {
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        display: "inline-block",
+        flexShrink: 0,
+    },
+
+    legendDotCurrent: {
+        background: COLORS.green,
+    },
+
+    legendDotAnswered: {
+        background: COLORS.softMint,
+        border: `1px solid ${COLORS.green}`,
+    },
+
+    legendDotUnanswered: {
+        background: "rgba(255, 255, 255, 0.1)",
+        border: `1px solid rgba(255, 255, 255, 0.15)`,
+    },
+
+    paletteGrid: {
+        marginTop: 9,
+        maxHeight: 120,
+        overflowY: "auto",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(31px, 1fr))",
+        gap: 6,
+        paddingRight: 2,
+    },
+
+    paletteButton: {
+        width: "100%",
+        minWidth: 0,
+        minHeight: 31,
+        padding: "5px 2px",
+        borderRadius: 9,
+        fontSize: 9,
+        fontWeight: 900,
+        cursor: "pointer",
+        boxSizing: "border-box",
+        position: "relative",
+    },
+
+    paletteButtonUnanswered: {
+        background: "rgba(255, 255, 255, 0.06)",
+        border: `1px solid rgba(255, 255, 255, 0.1)`,
+        color: COLORS.muted,
+    },
+
+    paletteButtonAnswered: {
+        background: COLORS.softMint,
+        border: `1px solid ${COLORS.green}`,
+        color: COLORS.green,
+    },
+
+    paletteButtonCurrent: {
+        background: "linear-gradient(135deg, #10E79D, #007050)",
+        border: `1px solid ${COLORS.green}`,
+        color: "#010F0E",
+        boxShadow: "0 3px 8px rgba(16, 231, 157, 0.35)",
+    },
+
+    paletteButtonMarked: {
+        boxShadow: "inset 0 0 0 2px rgba(245, 158, 11, 0.75)",
+    },
+
+    paletteReviewDot: {
+        position: "absolute",
+        top: 3,
+        right: 3,
+        width: 5,
+        height: 5,
+        borderRadius: "50%",
+        background: COLORS.yellow,
+    },
+
+    questionPanel: {
+        marginTop: 13,
+        padding: 17,
+        borderRadius: 20,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        boxShadow:
+            "0 12px 32px rgba(0, 0, 0, 0.35)",
+    },
+
+    questionLabel: {
+        color:
+            COLORS.green,
+        fontSize: 8,
+        fontWeight: 900,
+        letterSpacing:
+            1,
+    },
+
+    examBookmarkButton: {
+        float: "right",
+        minHeight: 30,
+        padding: "6px 9px",
+        borderRadius: 9,
+        border: `1px solid rgba(16, 231, 157, 0.3)`,
+        background: COLORS.mint,
+        color: COLORS.green,
+        fontSize: 8.5,
+        fontWeight: 850,
+        cursor: "pointer",
+    },
+
+    questionText: {
+        margin:
+            "8px 0 0",
+        color:
+            COLORS.navy,
+        fontSize: 20,
+        lineHeight: 1.35,
+        fontWeight: 900,
+    },
+
+    questionMeta: {
+        marginTop: 7,
+        color:
+            COLORS.muted,
+        fontSize: 8.5,
+    },
+
+    options: {
+        marginTop: 17,
+        display:
+            "grid",
+        gap: 8,
+    },
+
+    optionButton: {
+        width:
+            "100%",
+        minHeight: 52,
+        padding:
+            "9px 10px",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        borderRadius: 13,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        color:
+            COLORS.navy,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 10,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor:
+            "pointer",
+        boxSizing:
+            "border-box",
+    },
+
+    selectedOption: {
+        border:
+            `1.5px solid ${COLORS.green}`,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+    },
+
+    optionLetter: {
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        background:
+            "rgba(255, 255, 255, 0.08)",
+        color:
+            "#FFFFFF",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        fontSize: 10,
+        fontWeight: 900,
+        flexShrink: 0,
+    },
+
+    selectedLetter: {
+        background:
+            COLORS.green,
+        color:
+            "#010F0E",
+    },
+
+    optionTick: {
+        width: 22,
+        height: 22,
+        borderRadius:
+            "50%",
+        background:
+            COLORS.green,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    nextButton: {
+        marginTop: 15,
+        width:
+            "100%",
+        padding:
+            "14px 16px",
+        border: "none",
+        borderRadius: 13,
+        background:
+            "linear-gradient(135deg, #10E79D, #007050)",
+        color:
+            "#010F0E",
+        fontSize: 13,
+        fontWeight: 900,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        gap: 10,
+        cursor:
+            "pointer",
+        boxShadow:
+            "0 6px 20px rgba(16, 231, 157, 0.35)",
+    },
+
+    submissionPage: {
+        minHeight:
+            "100dvh",
+        padding:
+            "24px 15px 105px",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        boxSizing:
+            "border-box",
+    },
+
+    submissionCard: {
+        width:
+            "100%",
+        maxWidth: 360,
+        textAlign:
+            "center",
+        background:
+            "rgba(6, 49, 43, 0.95)",
+        border:
+            `1px solid rgba(16, 231, 157, 0.25)`,
+        borderRadius: 26,
+        padding:
+            "40px 25px",
+        boxShadow:
+            "0 18px 45px rgba(0, 0, 0, 0.6)",
+    },
+
+    successRing: {
+        width: 104,
+        height: 104,
+        borderRadius:
+            "50%",
+        margin:
+            "0 auto",
+        background:
+            COLORS.green,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+    },
+
+    successEyebrow: {
+        marginTop: 28,
+        color:
+            COLORS.green,
+        fontSize: 9,
+        fontWeight: 900,
+        letterSpacing:
+            1,
+    },
+
+    successTitle: {
+        margin:
+            "8px 0 0",
+        fontSize: 27,
+        lineHeight: 1.23,
+        fontWeight: 900,
+        color:
+            COLORS.navy,
+    },
+
+    successText: {
+        margin:
+            "12px auto 0",
+        maxWidth: 390,
+        color:
+            COLORS.muted,
+        fontSize: 12,
+        lineHeight: 1.6,
+    },
+
+    largeProgress: {
+        height: 11,
+        background:
+            COLORS.softMint,
+        borderRadius: 30,
+        overflow:
+            "hidden",
+        marginTop: 28,
+    },
+
+    largeProgressFill: {
+        height:
+            "100%",
+        borderRadius: 30,
+        background:
+            COLORS.green,
+        transition:
+            "width 100ms linear",
+    },
+
+    analysisStatus: {
+        marginTop: 10,
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        color:
+            COLORS.muted,
+        fontSize: 10,
+        fontWeight: 750,
+    },
+
+    resultHero: {
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        alignItems:
+            "flex-end",
+        gap: 10,
+    },
+
+    resultStatus: {
+        display:
+            "inline-flex",
+        alignItems:
+            "center",
+        padding:
+            "7px 9px",
+        borderRadius: 10,
+        background:
+            COLORS.mint,
+        color:
+            COLORS.green,
+        fontSize: 8.5,
+        fontWeight: 900,
+        whiteSpace:
+            "nowrap",
+    },
+
+    scoreCard: {
+        marginTop: 17,
+        padding: 15,
+        borderRadius: 20,
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 13,
+    },
+
+    scoreCircle: {
+        width: 92,
+        height: 92,
+        borderRadius:
+            "50%",
+        background:
+            COLORS.mint,
+        border:
+            `10px solid ${COLORS.green}`,
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    scoreValue: {
+        fontSize: 22,
+        fontWeight: 900,
+        color:
+            "#FFFFFF",
+    },
+
+    scoreCaption: {
+        marginTop: 2,
+        fontSize: 9,
+        color:
+            COLORS.muted,
+        fontWeight: 800,
+    },
+
+    scoreSummary: {
+        minWidth: 0,
+    },
+
+    scoreSummaryLabel: {
+        color:
+            COLORS.muted,
+        fontSize: 10,
+        fontWeight: 750,
+    },
+
+    scoreSummaryValue: {
+        marginTop: 4,
+        fontSize: 23,
+        fontWeight: 900,
+        color:
+            "#FFFFFF",
+    },
+
+    scoreSummaryHint: {
+        marginTop: 5,
+        color:
+            COLORS.muted,
+        fontSize: 10,
+    },
+
+    resultGrid: {
+        marginTop: 12,
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+        gap: 7,
+    },
+
+    resultMetric: {
+        background:
+            "rgba(255, 255, 255, 0.05)",
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        borderRadius: 16,
+        padding: 13,
+    },
+
+    resultMetricIcon: {
+        width: 31,
+        height: 31,
+        borderRadius: 10,
+        background:
+            COLORS.mint,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+    },
+
+    resultMetricLabel: {
+        marginTop: 9,
+        color:
+            COLORS.muted,
+        fontSize: 9,
+        fontWeight: 750,
+    },
+
+    resultMetricValue: {
+        marginTop: 3,
+        fontSize: 18,
+        fontWeight: 900,
+        color:
+            "#FFFFFF",
+    },
+
+    rankCard: {
+        marginTop: 13,
+        background:
+            "linear-gradient(135deg, #06312B, #031D1B)",
+        border:
+            `1px solid rgba(16, 231, 157, 0.3)`,
+        borderRadius: 19,
+        padding: 16,
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap: 12,
+    },
+
+    rankIcon: {
+        width: 46,
+        height: 46,
+        borderRadius: 13,
+        background:
+            "rgba(16, 231, 157, 0.15)",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        flexShrink: 0,
+    },
+
+    rankSmall: {
+        fontSize: 8,
+        fontWeight: 900,
+        letterSpacing:
+            0.8,
+        color:
+            COLORS.green,
+    },
+
+    rankTitle: {
+        marginTop: 3,
+        fontSize: 10,
+        fontWeight: 800,
+        color:
+            "#FFFFFF",
+    },
+
+    rankNumber: {
+        marginTop: 2,
+        color:
+            COLORS.green,
+        fontSize: 19,
+        fontWeight: 900,
+    },
+
+    primaryResultButton: {
+        marginTop: 18,
+        width:
+            "100%",
+        border: "none",
+        borderRadius: 13,
+        padding:
+            "14px 16px",
+        background:
+            "linear-gradient(135deg, #10E79D, #007050)",
+        color:
+            "#010F0E",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        gap: 9,
+        fontSize: 13,
+        fontWeight: 900,
+        cursor:
+            "pointer",
+        boxShadow:
+            "0 6px 20px rgba(16, 231, 157, 0.35)",
+    },
+
+    secondaryResultButton: {
+        marginTop: 9,
+        width:
+            "100%",
+        border:
+            `1px solid rgba(16, 231, 157, 0.3)`,
+        borderRadius: 13,
+        padding:
+            "13px 16px",
+        background:
+            "rgba(255, 255, 255, 0.08)",
+        color:
+            COLORS.green,
+        fontSize: 12,
+        fontWeight: 850,
+        cursor:
+            "pointer",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        gap: 8,
+    },
+    testActionRow: {
+        marginTop: 15,
+        display: "grid",
+        gridTemplateColumns:
+            "auto 1fr auto",
+        gap: 7,
+        alignItems: "center",
+    },
+
+    smallActionButton: {
+        minHeight: 44,
+        padding: "9px 10px",
+        borderRadius: 12,
+        border:
+            `1px solid rgba(255, 255, 255, 0.1)`,
+        background: "rgba(255, 255, 255, 0.08)",
+        color: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 5,
+        fontSize: 9.5,
+        fontWeight: 850,
+        cursor: "pointer",
+    },
+
+    smallActionButtonDisabled: {
+        opacity: 0.45,
+        cursor: "not-allowed",
+    },
+
+    markButton: {
+        minHeight: 44,
+        padding: "9px 8px",
+        borderRadius: 12,
+        border:
+            `1px solid rgba(16, 231, 157, 0.3)`,
+        background: COLORS.mint,
+        color: COLORS.green,
+        fontSize: 9,
+        fontWeight: 850,
+        cursor: "pointer",
+    },
+
+    nextButtonCompact: {
+        minHeight: 44,
+        padding: "9px 12px",
+        border: "none",
+        borderRadius: 12,
+        background: "linear-gradient(135deg, #10E79D, #007050)",
+        color: "#010F0E",
+        fontSize: 10,
+        fontWeight: 900,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 7,
+        cursor: "pointer",
+        boxShadow: "0 4px 15px rgba(16, 231, 157, 0.3)",
+    },
+
 };

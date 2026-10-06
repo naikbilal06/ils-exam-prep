@@ -161,30 +161,45 @@ export default function RetakeImprovement({
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#F4FBF7",
+        width: "100%",
+        minHeight: "100dvh",
+        background:
+          "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+        color: "#FFFFFF",
+        display: "flex",
+        justifyContent: "center",
       }}
     >
-      <PageHeader
-        title="Retake & Improve"
-        onOpenMenu={onOpenSection}
-      />
-
-      <main
+      <div
         style={{
-          maxWidth: "560px",
-          margin: "0 auto",
-          padding: "13px 16px 30px",
+          width: "100%",
+          maxWidth: "430px",
+          minHeight: "100dvh",
+          boxSizing: "border-box",
         }}
       >
+        <PageHeader
+          title="Retake & Improve"
+          onBack={onBack}
+          onOpenMenu={onOpenSection}
+        />
+
+        <main
+          style={{
+            width: "100%",
+            maxWidth: "430px",
+            margin: "0 auto",
+            padding: "14px 16px 115px",
+            boxSizing: "border-box",
+          }}
+        >
         {/* HEADER */}
         <section
           style={{
             padding: "18px",
             borderRadius: "22px",
-            background:
-              "linear-gradient(135deg, #E5F8EF, #FFFFFF)",
-            border: "1px solid #D4EADF",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <div
@@ -200,7 +215,7 @@ export default function RetakeImprovement({
                 height: "46px",
                 flex: "0 0 46px",
                 borderRadius: "15px",
-                background: "#159B72",
+                background: "linear-gradient(135deg, #10E79D, #007050)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -209,14 +224,14 @@ export default function RetakeImprovement({
               <Icon
                 name="refresh"
                 size={24}
-                color="#FFFFFF"
+                color="#010F0E"
               />
             </div>
 
             <div>
               <span
                 style={{
-                  color: "#159B72",
+                  color: "#10E79D",
                   fontSize: "8px",
                   fontWeight: 800,
                   letterSpacing: "1px",
@@ -228,7 +243,7 @@ export default function RetakeImprovement({
               <h1
                 style={{
                   margin: "4px 0 3px",
-                  color: "#183238",
+                  color: "#FFFFFF",
                   fontSize: "22px",
                 }}
               >
@@ -257,13 +272,14 @@ export default function RetakeImprovement({
             marginTop: "11px",
             padding: "15px",
             borderRadius: "19px",
-            background: "#FFFFFF",
-            border: "1px solid #DDE9E3",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(12px)",
           }}
         >
           <span
             style={{
-              color: "#159B72",
+              color: "#10E79D",
               fontSize: "7px",
               fontWeight: 800,
               letterSpacing: "1px",
@@ -285,7 +301,7 @@ export default function RetakeImprovement({
                 width: "38px",
                 height: "38px",
                 borderRadius: "11px",
-                background: "#EAF8F1",
+                background: "rgba(16, 231, 157, 0.12)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -294,7 +310,7 @@ export default function RetakeImprovement({
               <Icon
                 name="refresh"
                 size={18}
-                color="#159B72"
+                color="#10E79D"
               />
             </div>
 
@@ -306,7 +322,7 @@ export default function RetakeImprovement({
               <strong
                 style={{
                   display: "block",
-                  color: "#293A3E",
+                  color: "#FFFFFF",
                   fontSize: "10px",
                 }}
               >
@@ -317,7 +333,7 @@ export default function RetakeImprovement({
                 style={{
                   display: "block",
                   marginTop: "3px",
-                  color: "#84908E",
+                  color: "rgba(226, 232, 240, 0.7)",
                   fontSize: "7px",
                 }}
               >
@@ -337,11 +353,12 @@ export default function RetakeImprovement({
               padding: "11px",
               border: "none",
               borderRadius: "11px",
-              background: "#159B72",
-              color: "#FFFFFF",
-              fontSize: "8px",
+              background: "linear-gradient(135deg, #10E79D, #007050)",
+              color: "#010F0E",
+              fontSize: "9px",
               fontWeight: 800,
               cursor: "pointer",
+              boxShadow: "0 4px 15px rgba(16, 231, 157, 0.25)",
             }}
           >
             Retake This Test →
@@ -361,7 +378,7 @@ export default function RetakeImprovement({
           >
             <span
               style={{
-                color: "#159B72",
+                color: "#10E79D",
                 fontSize: "7px",
                 fontWeight: 800,
                 letterSpacing: "1px",
@@ -373,7 +390,7 @@ export default function RetakeImprovement({
             <h2
               style={{
                 margin: "4px 0 0",
-                color: "#183238",
+                color: "#FFFFFF",
                 fontSize: "17px",
               }}
             >
@@ -393,8 +410,9 @@ export default function RetakeImprovement({
                 style={{
                   padding: "12px",
                   borderRadius: "15px",
-                  background: "#FFFFFF",
-                  border: "1px solid #DDE9E3",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  backdropFilter: "blur(10px)",
                 }}
               >
                 <div
@@ -407,7 +425,7 @@ export default function RetakeImprovement({
                 >
                   <strong
                     style={{
-                      color: "#536260",
+                      color: "rgba(226, 232, 240, 0.9)",
                       fontSize: "8px",
                     }}
                   >
@@ -418,10 +436,11 @@ export default function RetakeImprovement({
                     style={{
                       padding: "5px 7px",
                       borderRadius: "8px",
-                      background: "#EAF8F1",
-                      color: "#159B72",
-                      fontSize: "6px",
+                      background: "rgba(16, 231, 157, 0.15)",
+                      color: "#10E79D",
+                      fontSize: "7px",
                       fontWeight: 800,
+                      border: "1px solid rgba(16, 231, 157, 0.25)",
                     }}
                   >
                     {item.change}
@@ -441,15 +460,16 @@ export default function RetakeImprovement({
                     style={{
                       padding: "8px",
                       borderRadius: "9px",
-                      background: "#F5F7F6",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
                       textAlign: "center",
                     }}
                   >
                     <span
                       style={{
                         display: "block",
-                        color: "#98A29F",
-                        fontSize: "5px",
+                        color: "rgba(226, 232, 240, 0.5)",
+                        fontSize: "6px",
                       }}
                     >
                       PREVIOUS
@@ -459,7 +479,7 @@ export default function RetakeImprovement({
                       style={{
                         display: "block",
                         marginTop: "2px",
-                        color: "#687572",
+                        color: "rgba(226, 232, 240, 0.8)",
                         fontSize: "12px",
                       }}
                     >
@@ -470,22 +490,23 @@ export default function RetakeImprovement({
                   <Icon
                     name="arrow"
                     size={12}
-                    color="#159B72"
+                    color="#10E79D"
                   />
 
                   <div
                     style={{
                       padding: "8px",
                       borderRadius: "9px",
-                      background: "#EAF8F1",
+                      background: "rgba(16, 231, 157, 0.08)",
+                      border: "1px solid rgba(16, 231, 157, 0.2)",
                       textAlign: "center",
                     }}
                   >
                     <span
                       style={{
                         display: "block",
-                        color: "#789189",
-                        fontSize: "5px",
+                        color: "#10E79D",
+                        fontSize: "6px",
                       }}
                     >
                       LATEST
@@ -495,7 +516,7 @@ export default function RetakeImprovement({
                       style={{
                         display: "block",
                         marginTop: "2px",
-                        color: "#159B72",
+                        color: "#10E79D",
                         fontSize: "12px",
                       }}
                     >
@@ -514,8 +535,10 @@ export default function RetakeImprovement({
             marginTop: "14px",
             padding: "16px",
             borderRadius: "19px",
-            background: "#159B72",
+            background: "linear-gradient(135deg, rgba(16, 231, 157, 0.15), rgba(0, 112, 80, 0.25))",
+            border: "1px solid rgba(16, 231, 157, 0.3)",
             color: "#FFFFFF",
+            backdropFilter: "blur(10px)",
           }}
         >
           <div
@@ -530,7 +553,7 @@ export default function RetakeImprovement({
                 width: "40px",
                 height: "40px",
                 borderRadius: "12px",
-                background: "rgba(255,255,255,.15)",
+                background: "rgba(16, 231, 157, 0.2)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -539,7 +562,7 @@ export default function RetakeImprovement({
               <Icon
                 name="trend"
                 size={21}
-                color="#FFFFFF"
+                color="#10E79D"
               />
             </div>
 
@@ -548,7 +571,8 @@ export default function RetakeImprovement({
                 style={{
                   display: "block",
                   fontSize: "7px",
-                  opacity: 0.85,
+                  color: "rgba(226, 232, 240, 0.75)",
+                  letterSpacing: "0.5px",
                 }}
               >
                 OVERALL IMPROVEMENT
@@ -559,6 +583,7 @@ export default function RetakeImprovement({
                   display: "block",
                   marginTop: "2px",
                   fontSize: "22px",
+                  color: "#10E79D",
                 }}
               >
                 +17 Marks
@@ -571,7 +596,7 @@ export default function RetakeImprovement({
               margin: "9px 0 0",
               fontSize: "8px",
               lineHeight: 1.5,
-              opacity: 0.9,
+              color: "rgba(226, 232, 240, 0.85)",
             }}
           >
             Your latest attempt shows measurable
@@ -593,7 +618,7 @@ export default function RetakeImprovement({
           >
             <span
               style={{
-                color: "#159B72",
+                color: "#10E79D",
                 fontSize: "7px",
                 fontWeight: 800,
                 letterSpacing: "1px",
@@ -605,7 +630,7 @@ export default function RetakeImprovement({
             <h2
               style={{
                 margin: "4px 0 0",
-                color: "#183238",
+                color: "#FFFFFF",
                 fontSize: "17px",
               }}
             >
@@ -617,8 +642,9 @@ export default function RetakeImprovement({
             style={{
               padding: "14px",
               borderRadius: "18px",
-              background: "#FFFFFF",
-              border: "1px solid #DDE9E3",
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              backdropFilter: "blur(10px)",
             }}
           >
             {chapterComparison.map(
@@ -640,7 +666,7 @@ export default function RetakeImprovement({
                       index ===
                       chapterComparison.length - 1
                         ? "none"
-                        : "1px solid #EDF2EF",
+                        : "1px solid rgba(255, 255, 255, 0.08)",
                   }}
                 >
                   <div
@@ -654,7 +680,7 @@ export default function RetakeImprovement({
                       <strong
                         style={{
                           display: "block",
-                          color: "#30413F",
+                          color: "#FFFFFF",
                           fontSize: "8px",
                         }}
                       >
@@ -665,7 +691,7 @@ export default function RetakeImprovement({
                         style={{
                           display: "block",
                           marginTop: "2px",
-                          color: "#8A9593",
+                          color: "rgba(226, 232, 240, 0.65)",
                           fontSize: "6px",
                         }}
                       >
@@ -675,7 +701,7 @@ export default function RetakeImprovement({
 
                     <strong
                       style={{
-                        color: "#159B72",
+                        color: "#10E79D",
                         fontSize: "8px",
                       }}
                     >
@@ -701,7 +727,7 @@ export default function RetakeImprovement({
                       >
                         <span
                           style={{
-                            color: "#8B9694",
+                            color: "rgba(226, 232, 240, 0.6)",
                             fontSize: "6px",
                           }}
                         >
@@ -710,7 +736,7 @@ export default function RetakeImprovement({
 
                         <span
                           style={{
-                            color: "#75827F",
+                            color: "rgba(226, 232, 240, 0.8)",
                             fontSize: "6px",
                           }}
                         >
@@ -722,7 +748,7 @@ export default function RetakeImprovement({
                         style={{
                           height: "5px",
                           borderRadius: "20px",
-                          background: "#E7ECEA",
+                          background: "rgba(255, 255, 255, 0.1)",
                           overflow: "hidden",
                         }}
                       >
@@ -730,7 +756,7 @@ export default function RetakeImprovement({
                           style={{
                             width: `${item.oldAccuracy}%`,
                             height: "100%",
-                            background: "#B8C5C0",
+                            background: "rgba(226, 232, 240, 0.4)",
                           }}
                         />
                       </div>
@@ -746,7 +772,7 @@ export default function RetakeImprovement({
                       >
                         <span
                           style={{
-                            color: "#738681",
+                            color: "#10E79D",
                             fontSize: "6px",
                           }}
                         >
@@ -755,7 +781,7 @@ export default function RetakeImprovement({
 
                         <span
                           style={{
-                            color: "#159B72",
+                            color: "#10E79D",
                             fontSize: "6px",
                             fontWeight: 700,
                           }}
@@ -768,7 +794,7 @@ export default function RetakeImprovement({
                         style={{
                           height: "5px",
                           borderRadius: "20px",
-                          background: "#E7EEE9",
+                          background: "rgba(255, 255, 255, 0.1)",
                           overflow: "hidden",
                         }}
                       >
@@ -776,7 +802,7 @@ export default function RetakeImprovement({
                           style={{
                             width: `${item.newAccuracy}%`,
                             height: "100%",
-                            background: "#159B72",
+                            background: "#10E79D",
                           }}
                         />
                       </div>
@@ -794,8 +820,9 @@ export default function RetakeImprovement({
             marginTop: "14px",
             padding: "15px",
             borderRadius: "18px",
-            background: "#FFFFFF",
-            border: "1px solid #DDE9E3",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(10px)",
           }}
         >
           <div
@@ -808,12 +835,12 @@ export default function RetakeImprovement({
             <Icon
               name="target"
               size={17}
-              color="#159B72"
+              color="#10E79D"
             />
 
             <strong
               style={{
-                color: "#30413F",
+                color: "#FFFFFF",
                 fontSize: "10px",
               }}
             >
@@ -824,7 +851,7 @@ export default function RetakeImprovement({
           <p
             style={{
               margin: "8px 0 0",
-              color: "#71807D",
+              color: "rgba(226, 232, 240, 0.75)",
               fontSize: "8px",
               lineHeight: 1.55,
             }}
@@ -846,7 +873,7 @@ export default function RetakeImprovement({
               border: "none",
               background: "transparent",
               padding: 0,
-              color: "#159B72",
+              color: "#10E79D",
               fontSize: "7px",
               fontWeight: 800,
               cursor: "pointer",
@@ -863,8 +890,9 @@ export default function RetakeImprovement({
                 marginTop: "9px",
                 padding: "9px",
                 borderRadius: "10px",
-                background: "#F4FBF7",
-                color: "#687674",
+                background: "rgba(16, 231, 157, 0.08)",
+                border: "1px solid rgba(16, 231, 157, 0.2)",
+                color: "rgba(226, 232, 240, 0.9)",
                 fontSize: "7px",
                 lineHeight: 1.5,
               }}
@@ -893,24 +921,27 @@ export default function RetakeImprovement({
             }
             style={{
               padding: "12px 8px",
-              border: "1px solid #DDE9E3",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               borderRadius: "14px",
-              background: "#FFFFFF",
-              color: "#159B72",
-              fontSize: "7px",
+              background: "rgba(255, 255, 255, 0.05)",
+              color: "#10E79D",
+              fontSize: "8px",
               fontWeight: 800,
               cursor: "pointer",
+              backdropFilter: "blur(10px)",
+              transition: "transform 0.2s ease, background 0.2s ease",
             }}
           >
             <Icon
               name="chart"
               size={15}
-              color="#159B72"
+              color="#10E79D"
             />
             <span
               style={{
                 display: "block",
                 marginTop: "4px",
+                color: "#FFFFFF",
               }}
             >
               Review Questions
@@ -924,24 +955,27 @@ export default function RetakeImprovement({
             }
             style={{
               padding: "12px 8px",
-              border: "1px solid #DDE9E3",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
               borderRadius: "14px",
-              background: "#FFFFFF",
-              color: "#159B72",
-              fontSize: "7px",
+              background: "rgba(255, 255, 255, 0.05)",
+              color: "#10E79D",
+              fontSize: "8px",
               fontWeight: 800,
               cursor: "pointer",
+              backdropFilter: "blur(10px)",
+              transition: "transform 0.2s ease, background 0.2s ease",
             }}
           >
             <Icon
               name="refresh"
               size={15}
-              color="#159B72"
+              color="#10E79D"
             />
             <span
               style={{
                 display: "block",
                 marginTop: "4px",
+                color: "#FFFFFF",
               }}
             >
               Take Another Test
@@ -961,6 +995,7 @@ export default function RetakeImprovement({
           ← Back to Test History
         </button>
       </main>
+      </div>
     </div>
   );
 }

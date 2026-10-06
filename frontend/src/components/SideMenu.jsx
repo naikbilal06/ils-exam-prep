@@ -1,14 +1,14 @@
 import React from "react";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  red: "#D94B55",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "rgba(16, 231, 157, 0.12)",
+  softMint: "rgba(255, 255, 255, 0.05)",
+  white: "#031D1B",
+  muted: "rgba(226, 232, 240, 0.65)",
+  border: "rgba(255, 255, 255, 0.1)",
+  red: "#FF5E62",
 };
 
 function Icon({ name, size = 19, stroke = C.navy }) {
@@ -112,7 +112,7 @@ function Icon({ name, size = 19, stroke = C.navy }) {
     settings: (
       <>
         <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-2.4v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L8 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6v-2.4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L7.3 8.6 9 6.9l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2v2.4h-.2a1.7 1.7 0 0 0-1.8 1Z" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-2.4v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L8 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6v-2.4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L7.3 8.6 9 6.9l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 .3 1.9 1.7 1.7 0 0 0 1.5 1h.2v2.4h-.2a1.7 1.7 0 0 0-1.8 1Z" />
       </>
     ),
 
@@ -165,8 +165,18 @@ const predictionItems = [
     icon: "rank",
   },
   {
+    id: "rank-improvement",
+    label: "Rank Improvement",
+    icon: "rank",
+  },
+  {
     id: "college-prediction",
     label: "College Predictor",
+    icon: "college",
+  },
+  {
+    id: "my-colleges",
+    label: "My Colleges",
     icon: "college",
   },
   {
@@ -415,9 +425,9 @@ const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(8,47,60,0.28)",
+    background: "rgba(0, 0, 0, 0.7)",
     zIndex: 998,
-    backdropFilter: "blur(2px)",
+    backdropFilter: "blur(6px)",
   },
 
   drawer: {
@@ -426,12 +436,13 @@ const styles = {
     left: 0,
     width: "min(350px, 88vw)",
     height: "100vh",
-    background: C.white,
+    background: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 50%, #010F0E 100%)",
+    borderRight: `1px solid ${C.border}`,
     zIndex: 999,
     display: "flex",
     flexDirection: "column",
     boxShadow:
-      "14px 0 40px rgba(8,47,60,0.14)",
+      "20px 0 50px rgba(0,0,0,0.6)",
     overflowY: "auto",
   },
 
@@ -447,12 +458,12 @@ const styles = {
     fontSize: 18,
     fontWeight: 900,
     letterSpacing: 1,
-    color: C.navy,
+    color: "#FFFFFF",
   },
 
   tagline: {
     marginTop: 5,
-    color: C.muted,
+    color: C.green,
     fontSize: 8.5,
     fontWeight: 800,
     letterSpacing: 0.7,
@@ -463,7 +474,8 @@ const styles = {
     height: 37,
     borderRadius: 11,
     border: `1px solid ${C.border}`,
-    background: C.white,
+    background: "rgba(255, 255, 255, 0.08)",
+    color: "#FFFFFF",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -476,7 +488,7 @@ const styles = {
     padding: 13,
     borderRadius: 16,
     border: `1px solid ${C.border}`,
-    background: C.mint,
+    background: "rgba(255, 255, 255, 0.04)",
     display: "flex",
     alignItems: "center",
     gap: 10,
@@ -488,12 +500,12 @@ const styles = {
     width: 45,
     height: 45,
     borderRadius: 14,
-    background: C.green,
-    color: C.white,
+    background: "linear-gradient(135deg, #10E79D, #007050)",
+    color: "#010F0E",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 900,
     flexShrink: 0,
   },
@@ -506,7 +518,7 @@ const styles = {
   profileName: {
     fontSize: 12.5,
     fontWeight: 900,
-    color: C.navy,
+    color: "#FFFFFF",
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -533,6 +545,7 @@ const styles = {
     height: 6,
     borderRadius: "50%",
     background: C.green,
+    boxShadow: "0 0 8px rgba(16, 231, 157, 0.8)",
   },
 
   profileArrow: {
@@ -549,7 +562,7 @@ const styles = {
 
   groupTitle: {
     margin: "14px 8px 6px",
-    color: C.muted,
+    color: "rgba(226, 232, 240, 0.5)",
     fontSize: 8,
     letterSpacing: 1,
     fontWeight: 900,
@@ -570,17 +583,19 @@ const styles = {
     textAlign: "left",
     color: C.muted,
     cursor: "pointer",
+    transition: "all 0.2s ease",
   },
 
   menuItemActive: {
-    background: C.mint,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.25)",
   },
 
   menuIcon: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    background: "#F7F9F8",
+    background: "rgba(255, 255, 255, 0.05)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -588,7 +603,7 @@ const styles = {
   },
 
   menuIconActive: {
-    background: C.white,
+    background: "rgba(16, 231, 157, 0.2)",
   },
 
   menuLabel: {
@@ -607,12 +622,13 @@ const styles = {
     height: 22,
     borderRadius: 5,
     background: C.green,
+    boxShadow: "0 0 8px rgba(16, 231, 157, 0.7)",
   },
 
   bottomArea: {
     padding: "10px 10px 16px",
     borderTop: `1px solid ${C.border}`,
-    background: C.white,
+    background: "rgba(3, 29, 27, 0.95)",
   },
 
   bottomItem: {
@@ -632,7 +648,7 @@ const styles = {
   },
 
   bottomItemActive: {
-    background: C.mint,
+    background: "rgba(16, 231, 157, 0.12)",
     color: C.green,
   },
 
@@ -640,7 +656,7 @@ const styles = {
     width: 34,
     height: 34,
     borderRadius: 10,
-    background: "#F7F9F8",
+    background: "rgba(255, 255, 255, 0.05)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -650,9 +666,9 @@ const styles = {
     width: "100%",
     minHeight: 43,
     marginTop: 3,
-    border: `1px solid #F1D9DC`,
+    border: `1px solid rgba(255, 94, 98, 0.25)`,
     borderRadius: 11,
-    background: "#FFF8F9",
+    background: "rgba(255, 94, 98, 0.08)",
     display: "flex",
     alignItems: "center",
     gap: 10,
@@ -667,7 +683,7 @@ const styles = {
     width: 34,
     height: 34,
     borderRadius: 10,
-    background: "#FFFFFF",
+    background: "rgba(255, 94, 98, 0.15)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

@@ -1,19 +1,20 @@
 import React, { useState } from "react";
+import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:3000";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  red: "#D94B55",
-  blue: "#3679C9",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+  softMint: "rgba(16, 231, 157, 0.12)",
+  white: "rgba(255, 255, 255, 0.05)",
+  muted: "rgba(226, 232, 240, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  red: "#FF5E62",
+  blue: "#38BDF8",
 };
 
 const subjects = [
@@ -115,6 +116,18 @@ export default function Practice({
 
   const [mode, setMode] = useState(null);
 
+  const [selectedExam, setSelectedExam] =
+    useState(profile?.exams?.[0] || "neet");
+
+  const [selectedChapter, setSelectedChapter] =
+    useState("");
+
+  const [selectedDifficulty, setSelectedDifficulty] =
+    useState("Mixed");
+
+  const [questionLimit, setQuestionLimit] =
+    useState("10");
+
   const [questions, setQuestions] = useState([]);
 
   const [currentIndex, setCurrentIndex] =
@@ -123,21 +136,35 @@ export default function Practice({
   const [selectedAnswer, setSelectedAnswer] =
     useState(null);
 
-  const [answered, setAnswered] =
-    useState(false);
+  const [answered, setAnswered] = useState(false);
 
   const [answers, setAnswers] = useState([]);
 
   const [loadingQuestions, setLoadingQuestions] =
     useState(false);
 
+  const [loadingAnswer, setLoadingAnswer] =
+    useState(false);
+
   const [questionError, setQuestionError] =
     useState("");
+
+  const [answerError, setAnswerError] =
+    useState("");
+
+  const [currentAnswerResult, setCurrentAnswerResult] =
+    useState(null);
 
   const [saving, setSaving] = useState(false);
 
   const [saveMessage, setSaveMessage] =
     useState("");
+
+  const [bookmarkIds, setBookmarkIds] =
+    useState(() => new Set());
+
+  const [savedLoading, setSavedLoading] =
+    useState(false);
 
   const currentQuestion =
     questions[currentIndex];
@@ -145,6 +172,170 @@ export default function Practice({
   const selectedSubjectData = subjects.find(
     (item) => item.id === selectedSubject
   );
+
+  const getIdentityParams = () => {
+    const params = new URLSearchParams();
+    if (profile?.mobile) params.set("mobile", profile.mobile);
+    if (profile?.email) params.set("email", profile.email);
+    if (profile?.googleId) params.set("googleId", profile.googleId);
+    return params;
+  };
+
+  const loadBookmarkIds = async () => {
+    const params = getIdentityParams();
+    const response = await fetch(
+      `${API_URL}/api/bookmarks?${params.toString()}`
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.success) {
+      throw new Error(data?.message || "Unable to load bookmarks.");
+    }
+    setBookmarkIds(
+      new Set(
+        (data.bookmarks || []).map((item) =>
+          String(item.questionId)
+        )
+      )
+    );
+  };
+
+  const normalizeQuestion = (question, exam) => ({
+    id: String(
+      question.questionId ||
+      question.id ||
+      question._id ||
+      ""
+    ),
+    questionId: String(
+      question.questionId ||
+      question.id ||
+      question._id ||
+      ""
+    ),
+    question:
+      question.questionText ||
+      question.question ||
+      "",
+    options: Array.isArray(question.options)
+      ? question.options.map((option, index) =>
+          option && typeof option === "object"
+            ? {
+                key: String(
+                  option.key ||
+                  String.fromCharCode(65 + index)
+                ).toUpperCase(),
+                text: String(
+                  option.text ??
+                  option.value ??
+                  ""
+                ),
+              }
+            : {
+                key: String.fromCharCode(65 + index),
+                text: String(option ?? ""),
+              }
+        )
+      : question.options &&
+          typeof question.options === "object"
+        ? Object.entries(question.options).map(
+            ([key, value]) => ({
+              key: String(key).toUpperCase(),
+              text: String(value ?? ""),
+            })
+          )
+        : [],
+    explanation: question.explanation || "",
+    exam: question.exam || exam,
+    testId: question.testId || "",
+    subjectId: question.subjectId || selectedSubject || "",
+    subjectName:
+      question.subjectName ||
+      selectedSubjectData?.name ||
+      selectedSubject ||
+      "",
+    chapterId: question.chapterId || "",
+    chapterName: question.chapterName || "",
+    difficulty: question.difficulty || "Medium",
+    marks: Number(question.marks) || 4,
+    negativeMarks: Number(question.negativeMarks) || 1,
+  });
+
+  const loadSavedQuestions = async (type) => {
+    try {
+      setSavedLoading(true);
+      setQuestionError("");
+      const params = getIdentityParams();
+      params.set("type", type);
+      const response = await fetch(
+        `${API_URL}/api/practice/saved?${params.toString()}`
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Unable to load saved questions.");
+      }
+      const exam = profile?.exams?.[0] || "neet";
+      const loaded = (data.questions || []).map((question) =>
+        normalizeQuestion(question, exam)
+      );
+      setQuestions(loaded);
+      setAnswers([]);
+      setCurrentIndex(0);
+      setSelectedAnswer(null);
+      setAnswered(false);
+      setCurrentAnswerResult(null);
+      setSelectedSubject(null);
+      setMode(type);
+      setStage(loaded.length ? "questions" : "subject");
+      if (!loaded.length) {
+        setQuestionError(
+          type === "wrong"
+            ? "No wrong questions yet. Complete a test to build your revision list."
+            : "No bookmarked questions yet."
+        );
+      }
+    } catch (error) {
+      console.error("Saved questions error:", error);
+      setQuestionError("Unable to load your questions right now.");
+    } finally {
+      setSavedLoading(false);
+    }
+  };
+
+  const toggleBookmark = async () => {
+    if (!currentQuestion?.questionId) return;
+    const questionId = currentQuestion.questionId;
+    const isBookmarked = bookmarkIds.has(questionId);
+    const params = getIdentityParams();
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/bookmarks`,
+        {
+          method: isBookmarked ? "DELETE" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mobile: profile?.mobile || "",
+            email: profile?.email || "",
+            googleId: profile?.googleId || "",
+            questionId,
+            exam: currentQuestion.exam,
+          }),
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Unable to update bookmark.");
+      }
+      setBookmarkIds((previous) => {
+        const next = new Set(previous);
+        if (isBookmarked) next.delete(questionId);
+        else next.add(questionId);
+        return next;
+      });
+    } catch (error) {
+      setAnswerError(error.message || "Unable to update bookmark.");
+    }
+  };
 
   const correctCount = answers.filter(
     (item) => item.correct === true
@@ -158,9 +349,22 @@ export default function Practice({
     (item) => item.selected === null
   ).length;
 
-  const score =
-    correctCount * 4 -
-    incorrectCount;
+  const score = answers.reduce(
+    (total, item) => {
+      if (item.correct === true) {
+        return total + item.marks;
+      }
+
+      if (item.correct === false) {
+        return (
+          total - item.negativeMarks
+        );
+      }
+
+      return total;
+    },
+    0
+  );
 
   const chooseSubject = (subjectId) => {
     setSelectedSubject(subjectId);
@@ -171,6 +375,8 @@ export default function Practice({
     setAnswered(false);
     setAnswers([]);
     setQuestionError("");
+    setAnswerError("");
+    setCurrentAnswerResult(null);
     setSaveMessage("");
     setStage("mode");
   };
@@ -188,26 +394,46 @@ export default function Practice({
       setCurrentIndex(0);
       setSelectedAnswer(null);
       setAnswered(false);
+      setCurrentAnswerResult(null);
       setSaveMessage("");
 
-      const exam =
-        profile?.exams?.[0] || "neet";
+      const exam = selectedExam || "neet";
+      const limit = Math.max(
+        1,
+        Number(questionLimit) || 10
+      );
+
+      const params = new URLSearchParams({
+        exam: exam.toLowerCase(),
+        subject: selectedSubject,
+        difficulty: selectedDifficulty,
+        limit: String(limit),
+      });
+
+      if (selectedChapter.trim()) {
+        params.set("chapter", selectedChapter.trim());
+      }
+
+      if (import.meta.env.DEV) {
+        params.set("allowPartial", "true");
+      }
 
       const url =
-        `${API_URL}/api/practice/questions` +
-        `?exam=${encodeURIComponent(
-          exam.toLowerCase()
-        )}` +
-        `&subject=${encodeURIComponent(
-          selectedSubject
-        )}` +
-        `&limit=10`;
+        `${API_URL}/api/practice/questions?${params}`;
 
-      const response = await fetch(url);
+      let response;
+      let data;
 
-      const data = await response.json();
+      if (Capacitor.getPlatform() === "web") {
+        response = await fetch(url);
+        data = await response.json().catch(() => ({}));
+      } else {
+        response = await CapacitorHttp.get({ url });
+        data = response?.data || {};
+      }
 
-      if (!response.ok || !data.success) {
+      const status = response?.status || 200;
+      if (status < 200 || status >= 300 || !data.success) {
         throw new Error(
           data.message ||
             "Unable to load practice questions."
@@ -224,42 +450,24 @@ export default function Practice({
       }
 
       const normalizedQuestions =
-        data.questions.map((question) => ({
-          id: question.id,
-          question: question.question,
-          options: Array.isArray(
-            question.options
-          )
-            ? question.options
-            : [],
-          explanation:
-            question.explanation || "",
-          exam:
-            question.exam || exam,
-          testId:
-            question.testId ||
-            `practice-${selectedSubject}`,
-          subjectId:
-            question.subjectId ||
-            selectedSubject,
-          subjectName:
-            question.subjectName ||
-            selectedSubjectData?.name ||
-            selectedSubject,
-          chapterId:
-            question.chapterId || "",
-          chapterName:
-            question.chapterName || "",
-          difficulty:
-            question.difficulty ||
-            "Medium",
-          marks:
-            Number(question.marks) || 4,
-          negativeMarks:
-            Number(question.negativeMarks) || 1,
-        }));
+        data.questions.map((question) =>
+          normalizeQuestion(question, exam)
+        ).filter(
+          (question) =>
+            question.questionId &&
+            question.question &&
+            question.options.length >= 2
+        );
 
       setQuestions(normalizedQuestions);
+      if (normalizedQuestions.length < limit) {
+        setQuestionError(
+          `${normalizedQuestions.length} real questions are available for this selection.`
+        );
+      }
+      await loadBookmarkIds().catch((error) => {
+        console.warn("Bookmark loading error:", error);
+      });
       setStage("questions");
     } catch (error) {
       console.error(
@@ -276,38 +484,90 @@ export default function Practice({
     }
   };
 
-  const checkAnswer = () => {
+  const checkAnswer = async () => {
     if (
       selectedAnswer === null ||
       answered ||
-      !currentQuestion
+      !currentQuestion ||
+      loadingAnswer
     ) {
       return;
     }
 
-    /*
-     * The practice questions API does not expose the
-     * correct answer to the browser.
-     *
-     * Answer verification will be handled by the
-     * dedicated backend answer-check endpoint.
-     *
-     * For now we move the selected answer into state
-     * and wait for the backend verification step.
-     */
+    try {
+      setLoadingAnswer(true);
+      setAnswerError("");
 
-    setAnswered(true);
+      const response = await fetch(
+        `${API_URL}/api/practice/answer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            questionId:
+              currentQuestion.questionId,
+            selectedAnswer,
+          }),
+        }
+      );
 
-    setAnswers((current) => [
-      ...current,
-      {
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to verify answer."
+        );
+      }
+
+      const result = {
         questionId:
-          currentQuestion.id,
+          currentQuestion.questionId,
         selected: selectedAnswer,
-        correct: null,
-        answer: null,
-      },
-    ]);
+        selectedIndex: selectedAnswer,
+        selectedKey:
+          data.selectedAnswer,
+        correctKey:
+          data.correctAnswer,
+        explanation:
+          data.explanation || "",
+        correct:
+          data.isCorrect === true,
+        marks:
+          Number(data.marks) ||
+          currentQuestion.marks ||
+          4,
+        negativeMarks:
+          Number(data.negativeMarks) ||
+          currentQuestion.negativeMarks ||
+          1,
+      };
+
+      setCurrentAnswerResult(data);
+      setAnswered(true);
+
+      setAnswers((current) => {
+        const next = [...current];
+        next[currentIndex] = result;
+        return next;
+      });
+    } catch (error) {
+      console.error(
+        "Answer verification error:",
+        error
+      );
+
+      setAnswerError(
+        error.message ||
+          "Unable to verify answer."
+      );
+    } finally {
+      setLoadingAnswer(false);
+    }
   };
 
   const nextQuestion = () => {
@@ -323,8 +583,22 @@ export default function Practice({
         (current) => current + 1
       );
 
-      setSelectedAnswer(null);
-      setAnswered(false);
+      const nextAnswer =
+        answers[currentIndex + 1];
+      setSelectedAnswer(
+        nextAnswer?.selectedIndex ?? null
+      );
+      setAnswered(Boolean(nextAnswer));
+      setAnswerError("");
+      setCurrentAnswerResult(
+        nextAnswer
+          ? {
+              isCorrect: nextAnswer.correct,
+              selectedAnswer: nextAnswer.selectedKey,
+              correctAnswer: nextAnswer.correctKey,
+            }
+          : null
+      );
 
       return;
     }
@@ -350,6 +624,16 @@ export default function Practice({
     const totalQuestions =
       questions.length;
 
+    const resultSubjectId =
+      selectedSubject ||
+      currentQuestion?.subjectId ||
+      "saved";
+
+    const resultSubjectName =
+      selectedSubjectData?.name ||
+      currentQuestion?.subjectName ||
+      "Saved Questions";
+
     const attempted =
       answers.filter(
         (item) =>
@@ -369,17 +653,38 @@ export default function Practice({
       ).length;
 
     const finalSkipped =
-      answers.filter(
-        (item) =>
-          item.selected === null
-      ).length;
+      questions.length -
+      answers.length;
 
     const totalMarks =
-      totalQuestions * 4;
+      questions.reduce(
+        (total, question) =>
+          total +
+          (Number(question.marks) || 4),
+        0
+      );
 
     const finalScore =
-      finalCorrect * 4 -
-      finalIncorrect;
+      answers.reduce(
+        (total, item) => {
+          if (item.correct === true) {
+            return (
+              total +
+              (Number(item.marks) || 4)
+            );
+          }
+
+          if (item.correct === false) {
+            return (
+              total -
+              (Number(item.negativeMarks) || 1)
+            );
+          }
+
+          return total;
+        },
+        0
+      );
 
     const accuracy =
       attempted > 0
@@ -411,7 +716,7 @@ export default function Practice({
               `practice-${selectedSubject}-${Date.now()}`,
 
             testTitle:
-              `${selectedSubjectData?.name || selectedSubject} Practice`,
+              `${resultSubjectName} Practice`,
 
             exam:
               profile?.exams?.[0] ||
@@ -440,24 +745,25 @@ export default function Practice({
             estimatedRank:
               null,
 
-            answers:
-              answers.map(
-                (item) => ({
-                  questionId:
-                    item.questionId,
-                  selected:
-                    item.selected,
-                  correctAnswer:
-                    item.answer,
-                  isCorrect:
-                    item.correct,
-                })
-              ),
+            answers: questions.map(
+              (question, index) => {
+                const item = answers[index];
+                return {
+                  questionId: question.questionId,
+                  selectedAnswer: item
+                    ? item.selectedKey || item.selected
+                    : null,
+                  correctAnswer: item?.correctKey || null,
+                  isCorrect: item?.correct === true,
+                  isSkipped: !item,
+                };
+              }
+            ),
 
             subjectResults: [
               {
-                subject:
-                  selectedSubject,
+                subjectId:
+                  resultSubjectId,
 
                 totalQuestions,
 
@@ -474,6 +780,8 @@ export default function Practice({
 
                 score:
                   finalScore,
+
+                accuracy,
               },
             ],
 
@@ -484,13 +792,29 @@ export default function Practice({
                     question.chapterId,
 
                   chapterName:
-                    question.chapterName,
+                    question.chapterName ||
+                    "Practice",
 
                   subjectId:
-                    question.subjectId,
+                    question.subjectId ||
+                    resultSubjectId,
 
                   subjectName:
                     question.subjectName,
+
+                  totalQuestions: 1,
+
+                  attempted: 0,
+
+                  correct: 0,
+
+                  incorrect: 0,
+
+                  skipped: 0,
+
+                  score: 0,
+
+                  accuracy: 0,
                 })
               ),
           }),
@@ -529,13 +853,19 @@ export default function Practice({
     setStage("subject");
     setSelectedSubject(null);
     setMode(null);
+    setSelectedChapter("");
+    setSelectedDifficulty("Mixed");
+    setQuestionLimit("10");
     setQuestions([]);
     setCurrentIndex(0);
     setSelectedAnswer(null);
     setAnswered(false);
     setAnswers([]);
     setLoadingQuestions(false);
+    setLoadingAnswer(false);
     setQuestionError("");
+    setAnswerError("");
+    setCurrentAnswerResult(null);
     setSaving(false);
     setSaveMessage("");
   };
@@ -619,6 +949,36 @@ export default function Practice({
                 </div>
               </section>
 
+              <div style={styles.savedActions}>
+                <button
+                  type="button"
+                  style={styles.savedButton}
+                  disabled={savedLoading}
+                  onClick={() =>
+                    loadSavedQuestions("bookmarks")
+                  }
+                >
+                  Bookmarked Questions
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.savedButton}
+                  disabled={savedLoading}
+                  onClick={() =>
+                    loadSavedQuestions("wrong")
+                  }
+                >
+                  Wrong Questions
+                </button>
+              </div>
+
+              {questionError && (
+                <div style={styles.errorCard}>
+                  {questionError}
+                </div>
+              )}
+
               <div
                 style={styles.sectionTitle}
               >
@@ -632,9 +992,7 @@ export default function Practice({
                   (subject) => (
                     <button
                       type="button"
-                      key={
-                        subject.id
-                      }
+                      key={subject.id}
                       style={
                         styles.subjectCard
                       }
@@ -690,9 +1048,7 @@ export default function Practice({
                 Select how you want to
                 practice{" "}
                 <strong>
-                  {
-                    selectedSubjectData?.name
-                  }
+                  {selectedSubjectData?.name}
                 </strong>
                 .
               </p>
@@ -805,6 +1161,72 @@ export default function Practice({
                 </button>
               </div>
 
+              <div style={styles.practiceFilters}>
+                <label style={styles.filterLabel}>
+                  Exam
+                  <select
+                    value={selectedExam}
+                    onChange={(event) =>
+                      setSelectedExam(event.target.value)
+                    }
+                    style={styles.filterSelect}
+                  >
+                    {(profile?.exams?.length
+                      ? profile.exams
+                      : ["neet"]
+                    ).map((exam) => (
+                      <option key={exam} value={exam}>
+                        {String(exam).toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={styles.filterLabel}>
+                  Difficulty
+                  <select
+                    value={selectedDifficulty}
+                    onChange={(event) =>
+                      setSelectedDifficulty(event.target.value)
+                    }
+                    style={styles.filterSelect}
+                  >
+                    <option value="Mixed">Mixed</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </label>
+
+                <label style={styles.filterLabel}>
+                  Chapter (optional)
+                  <input
+                    value={selectedChapter}
+                    onChange={(event) =>
+                      setSelectedChapter(event.target.value)
+                    }
+                    placeholder="Chapter ID"
+                    style={styles.filterInput}
+                  />
+                </label>
+
+                <label style={styles.filterLabel}>
+                  Questions
+                  <select
+                    value={questionLimit}
+                    onChange={(event) =>
+                      setQuestionLimit(event.target.value)
+                    }
+                    style={styles.filterSelect}
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </label>
+              </div>
+
               {questionError && (
                 <div
                   style={
@@ -863,6 +1285,12 @@ export default function Practice({
           {stage === "questions" &&
             currentQuestion && (
               <>
+                {questionError && (
+                  <div style={styles.errorCard}>
+                    {questionError}
+                  </div>
+                )}
+
                 <div
                   style={
                     styles.progressTop
@@ -876,7 +1304,6 @@ export default function Practice({
                     >
                       {(
                         currentQuestion.subjectName ||
-                        selectedSubjectData?.name ||
                         ""
                       ).toUpperCase()}
                     </div>
@@ -931,112 +1358,136 @@ export default function Practice({
                     Q{currentIndex + 1}
                   </div>
 
-                  <div
-                    style={
-                      styles.chapterLabel
+                  <button
+                    type="button"
+                    style={styles.bookmarkButton}
+                    onClick={toggleBookmark}
+                    aria-label={
+                      bookmarkIds.has(
+                        currentQuestion.questionId
+                      )
+                        ? "Remove bookmark"
+                        : "Bookmark question"
                     }
                   >
-                    {currentQuestion.chapterName ||
-                      "Practice Question"}
-                  </div>
+                    {bookmarkIds.has(
+                      currentQuestion.questionId
+                    )
+                      ? "Bookmarked"
+                      : "Bookmark"}
+                  </button>
 
-                  <h1
-                    style={
-                      styles.questionText
-                    }
-                  >
-                    {
-                      currentQuestion.question
-                    }
-                  </h1>
-
-                  <div
-                    style={
-                      styles.optionsList
-                    }
-                  >
+                  <div style={styles.optionsList}>
                     {currentQuestion.options.map(
                       (option, index) => {
                         const key =
                           option.key ||
-                          String.fromCharCode(
-                            65 + index
-                          );
-
-                        const text =
-                          option.text ||
-                          option;
-
+                          String.fromCharCode(65 + index);
+                        const text = option.text || option;
                         const isSelected =
-                          selectedAnswer ===
-                          index;
+                          selectedAnswer === index;
+                        const isCorrect =
+                          answered &&
+                          currentAnswerResult?.correctAnswer === key;
+                        const isWrong =
+                          answered &&
+                          isSelected &&
+                          currentAnswerResult?.isCorrect === false;
 
                         return (
                           <button
                             type="button"
                             key={key}
-                            disabled={
-                              answered
-                            }
-                            onClick={() =>
-                              setSelectedAnswer(
-                                index
-                              )
-                            }
+                            disabled={answered || loadingAnswer}
+                            onClick={() => setSelectedAnswer(index)}
                             style={{
                               ...styles.option,
-                              ...(isSelected
+                              ...(isSelected && !answered
                                 ? styles.optionSelected
                                 : {}),
+                              ...(isCorrect ? styles.optionCorrect : {}),
+                              ...(isWrong ? styles.optionWrong : {}),
                             }}
                           >
-                            <span
-                              style={
-                                styles.optionLetter
-                              }
-                            >
+                            <span style={styles.optionLetter}>
                               {key}
                             </span>
-
-                            <span
-                              style={
-                                styles.optionText
-                              }
-                            >
+                            <span style={styles.optionText}>
                               {text}
                             </span>
+                            {isCorrect && (
+                              <Icon
+                                name="check"
+                                size={17}
+                                stroke={C.green}
+                              />
+                            )}
                           </button>
                         );
                       }
                     )}
                   </div>
 
-                  {answered && (
+                  {answerError && (
                     <div
                       style={
-                        styles.pendingCard
+                        styles.errorCard
                       }
                     >
-                      <div
-                        style={
-                          styles.pendingTitle
-                        }
-                      >
-                        Answer Submitted
-                      </div>
-
-                      <div
-                        style={
-                          styles.pendingText
-                        }
-                      >
-                        Your answer has been
-                        recorded. Backend answer
-                        verification will be
-                        connected next.
-                      </div>
+                      {answerError}
                     </div>
                   )}
+
+                  {answered &&
+                    currentAnswerResult && (
+                      <div
+                        style={{
+                          ...styles.explanationCard,
+                          background:
+                            currentAnswerResult.isCorrect
+                              ? "#EAF8F3"
+                              : "#FFF1F3",
+                        }}
+                      >
+                        <div
+                          style={{
+                            ...styles.explanationTitle,
+                            color:
+                              currentAnswerResult.isCorrect
+                                ? C.green
+                                : C.red,
+                          }}
+                        >
+                          {currentAnswerResult.isCorrect
+                            ? "Correct Answer"
+                            : "Wrong Answer"}
+                        </div>
+
+                        <div
+                          style={
+                            styles.explanationText
+                          }
+                        >
+                          {currentAnswerResult.explanation ||
+                            "No explanation available."}
+                        </div>
+
+                        {!currentAnswerResult.isCorrect && (
+                          <div
+                            style={
+                              styles.correctAnswerText
+                            }
+                          >
+                            Correct Answer:{" "}
+                            <strong>
+                              {
+                                currentAnswerResult.correctAnswer
+                              }
+                            </strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {!answered ? (
                     <button
@@ -1045,41 +1496,68 @@ export default function Practice({
                         ...styles.primaryButton,
                         opacity:
                           selectedAnswer ===
-                          null
+                            null ||
+                          loadingAnswer
                             ? 0.55
                             : 1,
                       }}
                       disabled={
                         selectedAnswer ===
-                        null
+                          null ||
+                        loadingAnswer
                       }
                       onClick={
                         checkAnswer
                       }
                     >
-                      Check Answer
+                      {loadingAnswer
+                        ? "Checking Answer..."
+                        : "Check Answer"}
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      style={
-                        styles.primaryButton
-                      }
-                      onClick={
-                        nextQuestion
-                      }
-                    >
-                      {currentIndex <
-                      questions.length - 1
-                        ? "Next Question"
-                        : "Finish Practice"}
+                    <div style={styles.practiceActions}>
+                      <button
+                        type="button"
+                        style={styles.secondaryButton}
+                        disabled={currentIndex === 0}
+                        onClick={() => {
+                          const previousIndex = currentIndex - 1;
+                          const previousAnswer = answers[previousIndex];
+                          setCurrentIndex(previousIndex);
+                          setSelectedAnswer(
+                            previousAnswer?.selectedIndex ?? null
+                          );
+                          setAnswered(Boolean(previousAnswer));
+                          setCurrentAnswerResult(
+                            previousAnswer
+                              ? {
+                                  isCorrect: previousAnswer.correct,
+                                  selectedAnswer: previousAnswer.selectedKey,
+                                  correctAnswer: previousAnswer.correctKey,
+                                  explanation: previousAnswer.explanation || "",
+                                }
+                              : null
+                          );
+                        }}
+                      >
+                        Previous
+                      </button>
 
-                      <Icon
-                        name="arrow"
-                        size={17}
-                        stroke="#FFFFFF"
-                      />
-                    </button>
+                      <button
+                        type="button"
+                        style={styles.primaryButton}
+                        onClick={nextQuestion}
+                      >
+                        {currentIndex < questions.length - 1
+                          ? "Next Question"
+                          : "Finish Practice"}
+                        <Icon
+                          name="arrow"
+                          size={17}
+                          stroke="#FFFFFF"
+                        />
+                      </button>
+                    </div>
                   )}
                 </section>
               </>
@@ -1096,8 +1574,8 @@ export default function Practice({
               </h1>
 
               <p style={styles.subtitle}>
-                Your practice session has
-                been completed.
+                Your verified performance for
+                this practice session.
               </p>
 
               <section
@@ -1122,7 +1600,14 @@ export default function Practice({
                     }
                   >
                     /{" "}
-                    {questions.length * 4}
+                    {questions.reduce(
+                      (total, question) =>
+                        total +
+                        (Number(
+                          question.marks
+                        ) || 4),
+                      0
+                    )}
                   </div>
                 </div>
 
@@ -1131,7 +1616,16 @@ export default function Practice({
                     styles.resultStatus
                   }
                 >
-                  Practice Completed
+                  {correctCount ===
+                  questions.length
+                    ? "Excellent!"
+                    : correctCount >=
+                      Math.ceil(
+                        questions.length *
+                          0.7
+                      )
+                    ? "Great Practice!"
+                    : "Keep Practicing!"}
                 </div>
 
                 <div
@@ -1149,15 +1643,15 @@ export default function Practice({
                 style={styles.resultGrid}
               >
                 <ResultStat
-                  label="Answered"
-                  value={
-                    answers.filter(
-                      (item) =>
-                        item.selected !==
-                        null
-                    ).length
-                  }
+                  label="Correct"
+                  value={correctCount}
                   color={C.green}
+                />
+
+                <ResultStat
+                  label="Incorrect"
+                  value={incorrectCount}
+                  color={C.red}
                 />
 
                 <ResultStat
@@ -1167,17 +1661,17 @@ export default function Practice({
                 />
 
                 <ResultStat
-                  label="Correct"
-                  value={correctCount}
+                  label="Accuracy"
+                  value={`${
+                    answers.length
+                      ? Math.round(
+                          (correctCount /
+                            answers.length) *
+                            100
+                        )
+                      : 0
+                  }%`}
                   color={C.green}
-                />
-
-                <ResultStat
-                  label="Attempted"
-                  value={
-                    questions.length
-                  }
-                  color={C.navy}
                 />
               </div>
 
@@ -1311,9 +1805,9 @@ const styles = {
 
   mobileShell: {
     width: "100%",
-    maxWidth: 390,
+    maxWidth: 430,
     minHeight: "100dvh",
-    background: C.white,
+    background: "transparent",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
@@ -1324,7 +1818,9 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 20,
-    background: C.white,
+    background: "rgba(6, 49, 43, 0.85)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
     borderBottom:
       `1px solid ${C.border}`,
     flexShrink: 0,
@@ -1346,7 +1842,8 @@ const styles = {
     borderRadius: 12,
     border:
       `1px solid ${C.border}`,
-    background: C.white,
+    background: "rgba(255, 255, 255, 0.08)",
+    color: "#10E79D",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1448,6 +1945,25 @@ const styles = {
     color: C.muted,
     fontSize: 9.5,
     lineHeight: 1.5,
+  },
+
+  savedActions: {
+    marginTop: 12,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+  },
+
+  savedButton: {
+    minHeight: 40,
+    border: `1px solid ${C.border}`,
+    borderRadius: 11,
+    background: C.white,
+    color: C.green,
+    fontSize: 9.5,
+    fontWeight: 850,
+    cursor: "pointer",
+    padding: "8px 6px",
   },
 
   sectionTitle: {
@@ -1561,6 +2077,46 @@ const styles = {
     flexShrink: 0,
   },
 
+  practiceFilters: {
+    marginTop: 14,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+  },
+
+  filterLabel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    color: C.muted,
+    fontSize: 8.5,
+    fontWeight: 800,
+  },
+
+  filterSelect: {
+    width: "100%",
+    minHeight: 36,
+    padding: "7px 8px",
+    border: `1px solid ${C.border}`,
+    borderRadius: 10,
+    background: C.white,
+    color: C.navy,
+    fontSize: 9.5,
+    boxSizing: "border-box",
+  },
+
+  filterInput: {
+    width: "100%",
+    minHeight: 36,
+    padding: "7px 8px",
+    border: `1px solid ${C.border}`,
+    borderRadius: 10,
+    background: C.white,
+    color: C.navy,
+    fontSize: 9.5,
+    boxSizing: "border-box",
+  },
+
   errorCard: {
     marginTop: 12,
     padding: 11,
@@ -1609,6 +2165,14 @@ const styles = {
     fontWeight: 850,
     cursor: "pointer",
     boxSizing: "border-box",
+  },
+
+  practiceActions: {
+    marginTop: 15,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+    alignItems: "center",
   },
 
   progressTop: {
@@ -1667,6 +2231,19 @@ const styles = {
     letterSpacing: 0.8,
   },
 
+  bookmarkButton: {
+    float: "right",
+    minHeight: 30,
+    padding: "6px 9px",
+    border: `1px solid ${C.border}`,
+    borderRadius: 9,
+    background: C.mint,
+    color: C.green,
+    fontSize: 8.5,
+    fontWeight: 850,
+    cursor: "pointer",
+  },
+
   chapterLabel: {
     marginTop: 5,
     color: C.muted,
@@ -1710,6 +2287,16 @@ const styles = {
     background: C.mint,
   },
 
+  optionCorrect: {
+    borderColor: C.green,
+    background: "#EAF8F3",
+  },
+
+  optionWrong: {
+    borderColor: C.red,
+    background: "#FFF1F3",
+  },
+
   optionLetter: {
     width: 27,
     height: 27,
@@ -1732,26 +2319,31 @@ const styles = {
     color: C.navy,
   },
 
-  pendingCard: {
+  explanationCard: {
     marginTop: 12,
     padding: 11,
     borderRadius: 12,
-    background: C.mint,
     border:
       `1px solid ${C.border}`,
   },
 
-  pendingTitle: {
+  explanationTitle: {
     fontSize: 9,
     fontWeight: 900,
-    color: C.green,
   },
 
-  pendingText: {
+  explanationText: {
     marginTop: 4,
-    fontSize: 9,
+    fontSize: 9.5,
     lineHeight: 1.5,
     color: C.muted,
+  },
+
+  correctAnswerText: {
+    marginTop: 7,
+    color: C.red,
+    fontSize: 9,
+    fontWeight: 800,
   },
 
   resultCard: {

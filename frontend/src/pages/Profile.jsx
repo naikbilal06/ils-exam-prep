@@ -1,15 +1,22 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  red: "#D94B55",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+  softMint: "rgba(16, 231, 157, 0.12)",
+  white: "rgba(255, 255, 255, 0.05)",
+  muted: "rgba(226, 232, 240, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  red: "#FF5E62",
 };
+
+function formatSubjectName(s) {
+  if (!s) return "";
+  return String(s)
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 function Icon({
   name,
@@ -22,7 +29,7 @@ function Icon({
     viewBox: "0 0 24 24",
     fill: "none",
     stroke,
-    strokeWidth: 1.9,
+    strokeWidth: 2,
     strokeLinecap: "round",
     strokeLinejoin: "round",
   };
@@ -148,15 +155,64 @@ export default function Profile({
   onBack,
   onLogout,
 }) {
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:3000";
+
+  const [analytics, setAnalytics] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStats() {
+      try {
+        const userMobile =
+          profile?.mobile ||
+          localStorage.getItem("ils_user_mobile") ||
+          "";
+        if (!userMobile) return;
+
+        const examName =
+          Array.isArray(profile?.exams) && profile.exams.length
+            ? profile.exams[0]
+            : profile?.selectedExam || "";
+
+        const params = new URLSearchParams({ mobile: userMobile });
+        if (examName) params.append("exam", examName);
+
+        const res = await fetch(`${API_URL}/api/analytics?${params.toString()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.success && !cancelled) {
+          setAnalytics(data);
+        }
+      } catch (e) {
+        console.warn("Profile analytics error:", e);
+      }
+    }
+
+    loadStats();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile]);
+
+  const totalCompletedTests = analytics?.summary?.totalTests ?? 0;
+  const bestScoreVal = analytics?.summary?.bestScore ?? 0;
+  const avgAccuracyVal =
+    analytics?.summary?.avgAccuracy != null
+      ? `${Math.round(analytics.summary.avgAccuracy)}%`
+      : "0%";
+
   const firstName =
     profile?.name?.split(" ")[0] ||
     profile?.fullName?.split(" ")[0] ||
-    "User";
+    "Learner";
 
   const fullName =
     profile?.name ||
     profile?.fullName ||
-    "User";
+    "ILS Learner";
 
   const mobile =
     profile?.mobile ||
@@ -183,166 +239,103 @@ export default function Profile({
     .join("")
     .toUpperCase();
 
-  const subjectList = subjects.length
+  const rawSubjectList = subjects.length
     ? subjects
     : [
-        "Physics",
-        "Chemistry",
-        "Biology",
-        "Mathematics",
-        "English",
-        "General Test",
+        "physics",
+        "chemistry",
+        "biology",
+        "mathematics",
       ];
 
   return (
     <div style={styles.page}>
       <div style={styles.mobileShell}>
         <header style={styles.header}>
-          <div
-            style={styles.headerInner}
-          >
+          <div style={styles.headerInner}>
             <button
               type="button"
-              style={
-                styles.backButton
-              }
+              style={styles.backButton}
               onClick={onBack}
               aria-label="Go back"
             >
-              <Icon
-                name="back"
-                size={20}
-              />
+              <Icon name="back" size={20} stroke="#10E79D" />
             </button>
 
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={styles.brand}
-              >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={styles.brand}>
                 ILS RANKER
               </div>
-
-              <div
-                style={styles.tagline}
-              >
+              <div style={styles.tagline}>
                 KNOW YOUR POTENTIAL
               </div>
             </div>
 
-            <div
-              style={
-                styles.headerTitle
-              }
-            >
+            <div style={styles.headerTitle}>
               Profile
             </div>
           </div>
         </header>
 
         <main style={styles.container}>
-          <section
-            style={
-              styles.profileHero
-            }
-          >
-            <div
-              style={styles.avatar}
-            >
+          <section style={styles.profileHero}>
+            <div style={styles.avatar}>
               {initials || "U"}
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={styles.welcome}
-              >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={styles.welcome}>
                 Welcome back
               </div>
 
-              <h1
-                style={styles.name}
-              >
+              <h1 style={styles.name}>
                 {firstName}
               </h1>
 
-              <div
-                style={
-                  styles.profileStatus
-                }
-              >
-                <span
-                  style={
-                    styles.statusDot
-                  }
-                />
-
+              <div style={styles.profileStatus}>
+                <span style={styles.statusDot} />
                 Active Learner
               </div>
             </div>
 
             <button
               type="button"
-              style={
-                styles.editButton
-              }
+              style={styles.editButton}
               onClick={() => {}}
               aria-label="Edit profile"
             >
               <Icon
                 name="edit"
-                size={17}
+                size={18}
                 stroke={C.green}
               />
             </button>
           </section>
 
-          <section
-            style={styles.statsCard}
-          >
+          <section style={styles.statsCard}>
             <Stat
-              value="12"
+              value={totalCompletedTests}
               label="Tests Taken"
             />
 
-            <div
-              style={
-                styles.statDivider
-              }
-            />
+            <div style={styles.statDivider} />
 
             <Stat
-              value="680"
+              value={bestScoreVal}
               label="Best Score"
             />
 
-            <div
-              style={
-                styles.statDivider
-              }
-            />
+            <div style={styles.statDivider} />
 
             <Stat
-              value="72%"
+              value={avgAccuracyVal}
               label="Avg. Accuracy"
             />
           </section>
 
-          <SectionTitle
-            text="Personal Information"
-          />
+          <SectionTitle text="Personal Information" />
 
-          <section
-            style={styles.infoCard}
-          >
+          <section style={styles.infoCard}>
             <InfoRow
               icon="user"
               label="Full Name"
@@ -357,13 +350,9 @@ export default function Profile({
             />
           </section>
 
-          <SectionTitle
-            text="Preparation"
-          />
+          <SectionTitle text="Preparation" />
 
-          <section
-            style={styles.infoCard}
-          >
+          <section style={styles.infoCard}>
             <InfoRow
               icon="exam"
               label="Primary Exam"
@@ -385,88 +374,47 @@ export default function Profile({
             />
           </section>
 
-          <SectionTitle
-            text="Selected Subjects"
-          />
+          <SectionTitle text="Selected Subjects" />
 
-          <section
-            style={styles.subjectCard}
-          >
-            <div
-              style={
-                styles.subjectHeader
-              }
-            >
-              <div
-                style={{
-                  minWidth: 0,
-                }}
-              >
-                <div
-                  style={
-                    styles.subjectTitle
-                  }
-                >
+          <section style={styles.subjectCard}>
+            <div style={styles.subjectHeader}>
+              <div style={{ minWidth: 0 }}>
+                <div style={styles.subjectTitle}>
                   Your Preparation Subjects
                 </div>
 
-                <div
-                  style={
-                    styles.subjectSubtitle
-                  }
-                >
-                  Subjects selected for your study
-                  plan
+                <div style={styles.subjectSubtitle}>
+                  Subjects selected for your study plan
                 </div>
               </div>
 
-              <div
-                style={
-                  styles.subjectCount
-                }
-              >
-                {subjects.length ||
-                  6}
+              <div style={styles.subjectCount}>
+                {rawSubjectList.length}
               </div>
             </div>
 
-            <div
-              style={
-                styles.subjectGrid
-              }
-            >
-              {subjectList.map(
-                (subject) => (
-                  <div
-                    key={subject}
-                    style={
-                      styles.subjectPill
-                    }
-                  >
-                    <span
-                      style={
-                        styles.subjectCheck
-                      }
-                    >
-                      <Icon
-                        name="check"
-                        size={11}
-                        stroke="#FFFFFF"
-                      />
-                    </span>
+            <div style={styles.subjectGrid}>
+              {rawSubjectList.map((subject) => (
+                <div key={subject} style={styles.subjectPill}>
+                  <span style={styles.subjectCheck}>
+                    <Icon
+                      name="check"
+                      size={12}
+                      stroke="#010F0E"
+                    />
+                  </span>
 
-                    {subject}
-                  </div>
-                )
-              )}
+                  <span style={styles.subjectPillText}>
+                    {formatSubjectName(subject)}
+                  </span>
+                </div>
+              ))}
             </div>
           </section>
 
           <SectionTitle text="Account" />
 
-          <section
-            style={styles.accountCard}
-          >
+          <section style={styles.accountCard}>
             <AccountRow
               icon="settings"
               title="Settings"
@@ -489,9 +437,7 @@ export default function Profile({
 
           <button
             type="button"
-            style={
-              styles.logoutButton
-            }
+            style={styles.logoutButton}
             onClick={onLogout}
           >
             <Icon
@@ -499,13 +445,10 @@ export default function Profile({
               size={18}
               stroke={C.red}
             />
-
             <span>Log Out</span>
           </button>
 
-          <div
-            style={styles.version}
-          >
+          <div style={styles.version}>
             ILS Ranker • Version 1.0.0
           </div>
         </main>
@@ -514,36 +457,22 @@ export default function Profile({
   );
 }
 
-function Stat({
-  value,
-  label,
-}) {
+function Stat({ value, label }) {
   return (
     <div style={styles.stat}>
-      <div
-        style={styles.statValue}
-      >
+      <div style={styles.statValue}>
         {value}
       </div>
-
-      <div
-        style={styles.statLabel}
-      >
+      <div style={styles.statLabel}>
         {label}
       </div>
     </div>
   );
 }
 
-function SectionTitle({
-  text,
-}) {
+function SectionTitle({ text }) {
   return (
-    <div
-      style={
-        styles.sectionHeading
-      }
-    >
+    <div style={styles.sectionHeading}>
       {text}
     </div>
   );
@@ -553,7 +482,7 @@ function InfoRow({
   icon,
   label,
   value,
-  valueColor = C.navy,
+  valueColor = "#FFFFFF",
   last,
 }) {
   return (
@@ -565,9 +494,7 @@ function InfoRow({
           : `1px solid ${C.border}`,
       }}
     >
-      <div
-        style={styles.infoIcon}
-      >
+      <div style={styles.infoIcon}>
         <Icon
           name={icon}
           size={18}
@@ -575,15 +502,8 @@ function InfoRow({
         />
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={styles.infoLabel}
-        >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={styles.infoLabel}>
           {label}
         </div>
 
@@ -617,9 +537,7 @@ function AccountRow({
       }}
       onClick={() => {}}
     >
-      <div
-        style={styles.accountIcon}
-      >
+      <div style={styles.accountIcon}>
         <Icon
           name={icon}
           size={18}
@@ -627,22 +545,12 @@ function AccountRow({
         />
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          textAlign: "left",
-        }}
-      >
-        <div
-          style={styles.accountTitle}
-        >
+      <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+        <div style={styles.accountTitle}>
           {title}
         </div>
 
-        <div
-          style={styles.accountSubtitle}
-        >
+        <div style={styles.accountSubtitle}>
           {subtitle}
         </div>
       </div>
@@ -650,7 +558,7 @@ function AccountRow({
       <Icon
         name="arrow"
         size={16}
-        stroke={C.muted}
+        stroke="rgba(226, 232, 240, 0.5)"
       />
     </button>
   );
@@ -661,7 +569,7 @@ const styles = {
     width: "100%",
     minHeight: "100dvh",
     background: C.mint,
-    color: C.navy,
+    color: "#FFFFFF",
     display: "flex",
     justifyContent: "center",
     alignItems: "stretch",
@@ -672,9 +580,9 @@ const styles = {
 
   mobileShell: {
     width: "100%",
-    maxWidth: 390,
+    maxWidth: 430,
     minHeight: "100dvh",
-    background: C.mint,
+    background: "transparent",
     boxSizing: "border-box",
   },
 
@@ -682,18 +590,19 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 20,
-    background: C.white,
-    borderBottom:
-      `1px solid ${C.border}`,
+    background: "rgba(6, 49, 43, 0.85)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    borderBottom: `1px solid ${C.border}`,
   },
 
   headerInner: {
     width: "100%",
     minHeight: 64,
-    padding: "12px 15px",
+    padding: "12px 16px",
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     boxSizing: "border-box",
   },
 
@@ -701,9 +610,9 @@ const styles = {
     width: 40,
     height: 40,
     borderRadius: 12,
-    border:
-      `1px solid ${C.border}`,
-    background: C.white,
+    border: `1px solid ${C.border}`,
+    background: "rgba(255, 255, 255, 0.08)",
+    color: "#10E79D",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -712,47 +621,45 @@ const styles = {
   },
 
   brand: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: 900,
     letterSpacing: 1,
     lineHeight: 1,
+    color: "#FFFFFF",
   },
 
   tagline: {
-    marginTop: 5,
-    color: C.muted,
-    fontSize: 7.5,
-    fontWeight: 800,
-    letterSpacing: 0.7,
+    marginTop: 4,
+    color: "rgba(226, 232, 240, 0.65)",
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 0.8,
   },
 
   headerTitle: {
     color: C.green,
-    fontSize: 10,
-    fontWeight: 900,
+    fontSize: 13,
+    fontWeight: 800,
     flexShrink: 0,
   },
 
   container: {
     width: "100%",
-    maxWidth: 390,
+    maxWidth: 430,
     margin: "0 auto",
-    padding:
-      "20px 15px 105px",
+    padding: "20px 16px 105px",
     boxSizing: "border-box",
   },
 
   profileHero: {
     display: "flex",
     alignItems: "center",
-    gap: 11,
-    padding: 16,
-    borderRadius: 19,
-    background: C.white,
-    border:
-      `1px solid ${C.border}`,
-    boxShadow:
-      "0 7px 20px rgba(8,47,60,0.045)",
+    gap: 14,
+    padding: 18,
+    borderRadius: 20,
+    background: "rgba(255, 255, 255, 0.04)",
+    border: `1px solid ${C.border}`,
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.25)",
     boxSizing: "border-box",
   },
 
@@ -760,55 +667,56 @@ const styles = {
     width: 58,
     height: 58,
     borderRadius: 18,
-    background: C.green,
-    color: C.white,
+    background: "linear-gradient(135deg, #10E79D 0%, #007050 100%)",
+    color: "#010F0E",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: 900,
     letterSpacing: 0.5,
     flexShrink: 0,
   },
 
   welcome: {
-    color: C.muted,
-    fontSize: 8.5,
-    fontWeight: 700,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
+    fontWeight: 600,
   },
 
   name: {
-    margin: "3px 0 0",
-    fontSize: 21,
-    lineHeight: 1.15,
+    margin: "4px 0 0",
+    fontSize: 22,
+    lineHeight: 1.2,
     fontWeight: 900,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
+    color: "#FFFFFF",
   },
 
   profileStatus: {
     marginTop: 6,
     display: "flex",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
     color: C.green,
-    fontSize: 8.5,
-    fontWeight: 800,
+    fontSize: 12,
+    fontWeight: 700,
   },
 
   statusDot: {
-    width: 6,
-    height: 6,
+    width: 7,
+    height: 7,
     borderRadius: "50%",
     background: C.green,
+    boxShadow: "0 0 8px rgba(16, 231, 157, 0.6)",
   },
 
   editButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 10,
-    border:
-      `1px solid ${C.border}`,
-    background: C.mint,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    border: `1px solid ${C.border}`,
+    background: "rgba(255, 255, 255, 0.06)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -817,16 +725,14 @@ const styles = {
   },
 
   statsCard: {
-    marginTop: 10,
-    padding: "14px 8px",
+    marginTop: 14,
+    padding: "16px 12px",
     display: "grid",
-    gridTemplateColumns:
-      "1fr auto 1fr auto 1fr",
+    gridTemplateColumns: "1fr auto 1fr auto 1fr",
     alignItems: "center",
-    background: C.white,
-    borderRadius: 17,
-    border:
-      `1px solid ${C.border}`,
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 18,
+    border: `1px solid ${C.border}`,
     boxSizing: "border-box",
   },
 
@@ -837,15 +743,15 @@ const styles = {
 
   statValue: {
     color: C.green,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 900,
   },
 
   statLabel: {
-    marginTop: 3,
-    color: C.muted,
-    fontSize: 7.5,
-    fontWeight: 700,
+    marginTop: 4,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 11,
+    fontWeight: 600,
     lineHeight: 1.2,
   },
 
@@ -856,34 +762,35 @@ const styles = {
   },
 
   sectionHeading: {
-    margin:
-      "21px 2px 9px",
-    color: C.navy,
-    fontSize: 11.5,
-    fontWeight: 900,
+    margin: "24px 4px 10px",
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
   },
 
   infoCard: {
-    background: C.white,
-    borderRadius: 17,
-    border:
-      `1px solid ${C.border}`,
-    padding: "0 14px",
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 18,
+    border: `1px solid ${C.border}`,
+    padding: "0 16px",
     boxSizing: "border-box",
   },
 
   infoRow: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    padding: "13px 0",
+    gap: 14,
+    padding: "14px 0",
   },
 
   infoIcon: {
-    width: 35,
-    height: 35,
-    borderRadius: 10,
-    background: C.mint,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -891,24 +798,23 @@ const styles = {
   },
 
   infoLabel: {
-    color: C.muted,
-    fontSize: 8.5,
-    fontWeight: 700,
+    color: "rgba(226, 232, 240, 0.65)",
+    fontSize: 11,
+    fontWeight: 600,
   },
 
   infoValue: {
     marginTop: 3,
-    fontSize: 11,
-    fontWeight: 850,
+    fontSize: 14,
+    fontWeight: 750,
     lineHeight: 1.25,
   },
 
   subjectCard: {
-    background: C.white,
-    borderRadius: 17,
-    border:
-      `1px solid ${C.border}`,
-    padding: 14,
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 18,
+    border: `1px solid ${C.border}`,
+    padding: 16,
     boxSizing: "border-box",
   },
 
@@ -916,60 +822,60 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 9,
+    gap: 10,
   },
 
   subjectTitle: {
-    fontSize: 11.5,
-    fontWeight: 900,
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
 
   subjectSubtitle: {
     marginTop: 3,
-    color: C.muted,
-    fontSize: 8.5,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
     lineHeight: 1.35,
   },
 
   subjectCount: {
-    minWidth: 28,
-    height: 28,
-    padding: "0 7px",
-    borderRadius: 8,
-    background: C.mint,
+    minWidth: 30,
+    height: 30,
+    padding: "0 8px",
+    borderRadius: 9,
+    background: "rgba(16, 231, 157, 0.14)",
+    border: "1px solid rgba(16, 231, 157, 0.3)",
     color: C.green,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 10,
-    fontWeight: 900,
+    fontSize: 12,
+    fontWeight: 800,
     flexShrink: 0,
   },
 
   subjectGrid: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(2, minmax(0, 1fr))",
-    gap: 7,
-    marginTop: 12,
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 10,
+    marginTop: 14,
   },
 
   subjectPill: {
     minWidth: 0,
     display: "flex",
     alignItems: "center",
-    gap: 5,
-    padding: "8px 8px",
-    borderRadius: 9,
-    background: C.mint,
-    color: C.navy,
-    fontSize: 8.5,
-    fontWeight: 750,
+    gap: 10,
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    boxSizing: "border-box",
   },
 
   subjectCheck: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     borderRadius: "50%",
     background: C.green,
     display: "flex",
@@ -978,31 +884,40 @@ const styles = {
     flexShrink: 0,
   },
 
+  subjectPillText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
   accountCard: {
-    background: C.white,
-    borderRadius: 17,
-    border:
-      `1px solid ${C.border}`,
-    padding: "0 14px",
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 18,
+    border: `1px solid ${C.border}`,
+    padding: "0 16px",
     boxSizing: "border-box",
   },
 
   accountRow: {
     width: "100%",
     border: "none",
-    background: C.white,
+    background: "transparent",
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    padding: "13px 0",
+    gap: 14,
+    padding: "14px 0",
     cursor: "pointer",
   },
 
   accountIcon: {
-    width: 35,
-    height: 35,
-    borderRadius: 10,
-    background: C.mint,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(16, 231, 157, 0.12)",
+    border: "1px solid rgba(16, 231, 157, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1010,41 +925,42 @@ const styles = {
   },
 
   accountTitle: {
-    fontSize: 10.5,
-    fontWeight: 850,
+    fontSize: 14,
+    fontWeight: 750,
+    color: "#FFFFFF",
   },
 
   accountSubtitle: {
     marginTop: 3,
-    color: C.muted,
-    fontSize: 8.5,
+    color: "rgba(226, 232, 240, 0.7)",
+    fontSize: 12,
     lineHeight: 1.3,
   },
 
   logoutButton: {
-    marginTop: 17,
+    marginTop: 22,
     width: "100%",
-    borderRadius: 13,
-    border:
-      "1px solid #F1D9DC",
-    background: "#FFF8F9",
-    color: C.red,
-    padding: "12px 14px",
+    borderRadius: 14,
+    border: "1px solid rgba(255, 94, 98, 0.3)",
+    background: "rgba(255, 94, 98, 0.08)",
+    color: "#FF5E62",
+    padding: "14px 16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 7,
-    fontSize: 11.5,
-    fontWeight: 850,
+    gap: 8,
+    fontSize: 14,
+    fontWeight: 800,
     cursor: "pointer",
+    boxSizing: "border-box",
   },
 
   version: {
-    marginTop: 13,
-    paddingBottom: 3,
+    marginTop: 16,
+    paddingBottom: 6,
     textAlign: "center",
-    color: C.muted,
-    fontSize: 8,
-    fontWeight: 650,
+    color: "rgba(226, 232, 240, 0.4)",
+    fontSize: 11,
+    fontWeight: 600,
   },
 };

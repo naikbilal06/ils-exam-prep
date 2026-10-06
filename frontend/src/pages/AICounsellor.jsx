@@ -1,16 +1,17 @@
 import React, { useState } from "react";
 
 const C = {
-  green: "#007050",
-  navy: "#082F3C",
-  mint: "#F4FBF7",
-  softMint: "#EAF5F1",
-  white: "#FFFFFF",
-  muted: "#68777B",
-  border: "#E4EFEB",
-  purple: "#7652C8",
-  red: "#D94B55",
-  blue: "#3679C9",
+  green: "#10E79D",
+  navy: "#FFFFFF",
+  mint: "rgba(16, 231, 157, 0.12)",
+  softMint: "rgba(255, 255, 255, 0.05)",
+  white: "rgba(255, 255, 255, 0.05)",
+  muted: "rgba(226, 232, 240, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  purple: "#A855F7",
+  red: "#FF5E62",
+  blue: "#38BDF8",
+  yellow: "#FBBF24",
 };
 
 function Icon({ name, size = 20, stroke = C.navy }) {
@@ -20,37 +21,48 @@ function Icon({ name, size = 20, stroke = C.navy }) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke,
-    strokeWidth: 1.9,
+    strokeWidth: 1.8,
     strokeLinecap: "round",
     strokeLinejoin: "round",
   };
 
-  const paths = {
+  const icons = {
     back: (
       <>
         <path d="M19 12H5" />
         <path d="M12 19l-7-7 7-7" />
       </>
     ),
+
+    menu: (
+      <>
+        <path d="M4 7h16" />
+        <path d="M4 12h16" />
+        <path d="M4 17h16" />
+      </>
+    ),
+
     spark: (
       <>
         <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" />
         <path d="M19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z" />
       </>
     ),
-    check: <path d="M5 12.5l4.2 4.2L19 7" />,
+
     arrow: (
       <>
         <path d="M5 12h14" />
         <path d="M13 6l6 6-6 6" />
       </>
     ),
+
     book: (
       <>
         <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
         <path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20" />
       </>
     ),
+
     target: (
       <>
         <circle cx="12" cy="12" r="8.5" />
@@ -58,23 +70,55 @@ function Icon({ name, size = 20, stroke = C.navy }) {
         <circle cx="12" cy="12" r="1.5" fill={stroke} />
       </>
     ),
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
+
     trend: (
       <>
         <path d="M4 17l6-6 4 4 6-7" />
         <path d="M16 8h4v4" />
       </>
     ),
-    chat: (
+
+    home: (
       <>
-        <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.8 8.8 0 0 1-3.7-.8L4 20l1.7-3.5A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" />
+        <path d="M3.5 10.5 12 3l8.5 7.5" />
+        <path d="M5.5 9.5V21h13V9.5" />
+        <path d="M9.5 21v-6h5v6" />
       </>
     ),
+
+    tests: (
+      <>
+        <rect x="5" y="3.5" width="14" height="17" rx="2" />
+        <path d="M9 8h6" />
+        <path d="M9 12h6" />
+        <path d="M9 16h4" />
+      </>
+    ),
+
+    analysis: (
+      <>
+        <path d="M5 19V10" />
+        <path d="M12 19V5" />
+        <path d="M19 19v-7" />
+        <path d="M3.5 21h17" />
+      </>
+    ),
+
+    college: (
+      <>
+        <path d="M3 9.5 12 5l9 4.5L12 14 3 9.5Z" />
+        <path d="M6 12v4.5c3.5 2 8.5 2 12 0V12" />
+        <path d="M21 10v5" />
+      </>
+    ),
+
+    profile: (
+      <>
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5 20c.8-3.5 3.2-5.5 7-5.5s6.2 2 7 5.5" />
+      </>
+    ),
+
     send: (
       <>
         <path d="M21 3L10 14" />
@@ -83,7 +127,7 @@ function Icon({ name, size = 20, stroke = C.navy }) {
     ),
   };
 
-  return <svg {...common}>{paths[name]}</svg>;
+  return <svg {...common}>{icons[name]}</svg>;
 }
 
 const weakAreas = [
@@ -143,10 +187,23 @@ const suggestions = [
   },
 ];
 
-export default function AICounsellor({ onBack }) {
+export default function AICounsellor({
+  onBack,
+  onOpenSection,
+  profile,
+}) {
   const [activeTab, setActiveTab] = useState("weak");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+
+  const name =
+    profile?.name?.trim() || "Student";
+
+  const open = (section) => {
+    if (onOpenSection) {
+      onOpenSection(section);
+    }
+  };
 
   const sendMessage = () => {
     const trimmed = message.trim();
@@ -170,20 +227,31 @@ export default function AICounsellor({ onBack }) {
   };
 
   return (
-    <div style={styles.page}>
-      <header style={styles.header}>
-        <div style={styles.headerInner}>
+    <div style={styles.screen}>
+      <div style={styles.phone}>
+
+        {/* HEADER */}
+        <header style={styles.header}>
           <button
-            onClick={onBack}
+            type="button"
             style={styles.backButton}
+            onClick={onBack}
             aria-label="Back"
           >
-            <Icon name="back" size={20} />
+            <Icon
+              name="back"
+              size={21}
+            />
           </button>
 
-          <div style={{ flex: 1 }}>
-            <div style={styles.brand}>ILS RANKER</div>
-            <div style={styles.tagline}>KNOW YOUR POTENTIAL</div>
+          <div style={styles.brand}>
+            <span style={styles.brandTop}>
+              ILS RANKER
+            </span>
+
+            <span style={styles.brandBottom}>
+              KNOW YOUR POTENTIAL
+            </span>
           </div>
 
           <div style={styles.aiHeaderIcon}>
@@ -193,69 +261,87 @@ export default function AICounsellor({ onBack }) {
               stroke={C.purple}
             />
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main style={styles.container}>
-        <div style={styles.hero}>
-          <div style={styles.robot}>
-            <Icon
-              name="spark"
-              size={28}
-              stroke="#FFFFFF"
-            />
+        {/* SCROLLABLE CONTENT */}
+        <main style={styles.content}>
+
+          {/* HERO */}
+          <section style={styles.hero}>
+            <div style={styles.robot}>
+              <Icon
+                name="spark"
+                size={27}
+                stroke="#FFFFFF"
+              />
+            </div>
+
+            <div style={styles.heroText}>
+              <div style={styles.kicker}>
+                AI-POWERED GUIDANCE
+              </div>
+
+              <h1 style={styles.title}>
+                Personalised Study Plan
+              </h1>
+
+              <p style={styles.subtitle}>
+                Smart recommendations based on your
+                test performance and preparation level.
+              </p>
+            </div>
+          </section>
+
+          {/* TABS */}
+          <div style={styles.tabs}>
+            <button
+              type="button"
+              style={{
+                ...styles.tab,
+                ...(activeTab === "weak"
+                  ? styles.activeTab
+                  : {}),
+              }}
+              onClick={() =>
+                setActiveTab("weak")
+              }
+            >
+              Weak Areas
+            </button>
+
+            <button
+              type="button"
+              style={{
+                ...styles.tab,
+                ...(activeTab === "plan"
+                  ? styles.activeTab
+                  : {}),
+              }}
+              onClick={() =>
+                setActiveTab("plan")
+              }
+            >
+              Practice Plan
+            </button>
+
+            <button
+              type="button"
+              style={{
+                ...styles.tab,
+                ...(activeTab === "resources"
+                  ? styles.activeTab
+                  : {}),
+              }}
+              onClick={() =>
+                setActiveTab("resources")
+              }
+            >
+              Resources
+            </button>
           </div>
 
-          <div style={{ flex: 1 }}>
-            <div style={styles.kicker}>AI-POWERED GUIDANCE</div>
-
-            <h1 style={styles.title}>
-              Personalised Study Plan
-            </h1>
-
-            <p style={styles.subtitle}>
-              Smart recommendations based on your test
-              performance and preparation level.
-            </p>
-          </div>
-        </div>
-
-        <div style={styles.tabs}>
-          <button
-            style={{
-              ...styles.tab,
-              ...(activeTab === "weak" ? styles.activeTab : {}),
-            }}
-            onClick={() => setActiveTab("weak")}
-          >
-            Weak Areas
-          </button>
-
-          <button
-            style={{
-              ...styles.tab,
-              ...(activeTab === "plan" ? styles.activeTab : {}),
-            }}
-            onClick={() => setActiveTab("plan")}
-          >
-            Practice Plan
-          </button>
-
-          <button
-            style={{
-              ...styles.tab,
-              ...(activeTab === "resources"
-                ? styles.activeTab
-                : {}),
-            }}
-            onClick={() => setActiveTab("resources")}
-          >
-            Resources
-          </button>
-        </div>
-
-        {activeTab === "weak" && (
-          <>
+          {/* WEAK AREAS */}
+          {activeTab === "weak" && (
             <section style={styles.section}>
               <div style={styles.sectionHeader}>
                 <div>
@@ -264,7 +350,8 @@ export default function AICounsellor({ onBack }) {
                   </h2>
 
                   <p style={styles.sectionSubtitle}>
-                    Priority topics detected from your performance
+                    Priority topics detected from your
+                    performance
                   </p>
                 </div>
 
@@ -287,7 +374,7 @@ export default function AICounsellor({ onBack }) {
                     {area.icon}
                   </div>
 
-                  <div style={{ flex: 1 }}>
+                  <div style={styles.areaContent}>
                     <div style={styles.areaTop}>
                       <div style={styles.areaTitle}>
                         {area.title}
@@ -297,11 +384,13 @@ export default function AICounsellor({ onBack }) {
                         style={{
                           ...styles.priority,
                           color:
-                            area.priority === "High Priority"
+                            area.priority ===
+                            "High Priority"
                               ? C.red
                               : C.yellow,
                           background:
-                            area.priority === "High Priority"
+                            area.priority ===
+                            "High Priority"
                               ? "#FFF0F1"
                               : "#FFF8E8",
                         }}
@@ -333,24 +422,35 @@ export default function AICounsellor({ onBack }) {
                     </div>
 
                     <div style={styles.actionList}>
-                      {area.actions.map((action, index) => (
-                        <div
-                          key={action}
-                          style={styles.action}
-                        >
-                          <span style={styles.actionNumber}>
-                            {index + 1}
-                          </span>
-                          <span>{action}</span>
-                        </div>
-                      ))}
+                      {area.actions.map(
+                        (action, index) => (
+                          <div
+                            key={action}
+                            style={styles.action}
+                          >
+                            <span
+                              style={
+                                styles.actionNumber
+                              }
+                            >
+                              {index + 1}
+                            </span>
+
+                            <span>{action}</span>
+                          </div>
+                        )
+                      )}
                     </div>
 
                     <button
+                      type="button"
                       style={styles.startNow}
-                      onClick={() => {}}
+                      onClick={() => {
+                        open("practice");
+                      }}
                     >
                       Start Now
+
                       <Icon
                         name="arrow"
                         size={15}
@@ -361,244 +461,346 @@ export default function AICounsellor({ onBack }) {
                 </div>
               ))}
             </section>
-          </>
-        )}
+          )}
 
-        {activeTab === "plan" && (
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>
-                  Today's Practice Plan
-                </h2>
+          {/* PRACTICE PLAN */}
+          {activeTab === "plan" && (
+            <section style={styles.section}>
+              <div style={styles.sectionHeader}>
+                <div>
+                  <h2 style={styles.sectionTitle}>
+                    Today's Practice Plan
+                  </h2>
 
-                <p style={styles.sectionSubtitle}>
-                  A focused plan to improve your weak areas
-                </p>
-              </div>
-            </div>
-
-            <PlanRow
-              time="45 min"
-              title="Revise Current Electricity"
-              text="Core concepts + important formulas"
-              icon="book"
-            />
-
-            <PlanRow
-              time="60 min"
-              title="Practice Physics Questions"
-              text="Target 30–40 mixed questions"
-              icon="target"
-            />
-
-            <PlanRow
-              time="30 min"
-              title="Attempt a Topic Test"
-              text="Check accuracy after revision"
-              icon="trend"
-              last
-            />
-
-            <div style={styles.planSummary}>
-              <div style={styles.planSummaryTitle}>
-                Recommended Study Time
+                  <p style={styles.sectionSubtitle}>
+                    A focused plan to improve your weak
+                    areas
+                  </p>
+                </div>
               </div>
 
-              <div style={styles.planTime}>2h 15m</div>
+              <PlanRow
+                time="45 min"
+                title="Revise Current Electricity"
+                text="Core concepts + important formulas"
+                icon="book"
+              />
 
-              <div style={styles.planHint}>
-                Consistent focused practice will improve your
-                performance faster.
+              <PlanRow
+                time="60 min"
+                title="Practice Physics Questions"
+                text="Target 30–40 mixed questions"
+                icon="target"
+              />
+
+              <PlanRow
+                time="30 min"
+                title="Attempt a Topic Test"
+                text="Check accuracy after revision"
+                icon="trend"
+                last
+              />
+
+              <div style={styles.planSummary}>
+                <div style={styles.planSummaryTitle}>
+                  Recommended Study Time
+                </div>
+
+                <div style={styles.planTime}>
+                  2h 15m
+                </div>
+
+                <div style={styles.planHint}>
+                  Consistent focused practice will
+                  improve your performance faster.
+                </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          )}
 
-        {activeTab === "resources" && (
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>
-                  Recommended Resources
-                </h2>
+          {/* RESOURCES */}
+          {activeTab === "resources" && (
+            <section style={styles.section}>
+              <div style={styles.sectionHeader}>
+                <div>
+                  <h2 style={styles.sectionTitle}>
+                    Recommended Resources
+                  </h2>
 
-                <p style={styles.sectionSubtitle}>
-                  Resources selected for your current needs
-                </p>
+                  <p style={styles.sectionSubtitle}>
+                    Resources selected for your current
+                    needs
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {[
-              {
-                title: "NCERT Revision",
-                text: "Revise important concepts and definitions.",
-              },
-              {
-                title: "Previous Year Questions",
-                text: "Practice exam-relevant questions.",
-              },
-              {
-                title: "Formula Revision",
-                text: "Quick revision for important Physics formulas.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                style={styles.resourceCard}
-              >
-                <div style={styles.resourceIcon}>
+              {[
+                {
+                  title: "NCERT Revision",
+                  text:
+                    "Revise important concepts and definitions.",
+                },
+                {
+                  title:
+                    "Previous Year Questions",
+                  text:
+                    "Practice exam-relevant questions.",
+                },
+                {
+                  title: "Formula Revision",
+                  text:
+                    "Quick revision for important Physics formulas.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  style={styles.resourceCard}
+                >
+                  <div style={styles.resourceIcon}>
+                    <Icon
+                      name="book"
+                      size={18}
+                      stroke={C.green}
+                    />
+                  </div>
+
+                  <div style={styles.resourceTextWrap}>
+                    <div style={styles.resourceTitle}>
+                      {item.title}
+                    </div>
+
+                    <div style={styles.resourceText}>
+                      {item.text}
+                    </div>
+                  </div>
+
                   <Icon
-                    name="book"
-                    size={19}
+                    name="arrow"
+                    size={16}
                     stroke={C.green}
                   />
                 </div>
+              ))}
+            </section>
+          )}
 
-                <div style={{ flex: 1 }}>
-                  <div style={styles.resourceTitle}>
+          {/* AI SUGGESTIONS */}
+          <section style={styles.suggestionSection}>
+            <div style={styles.sectionHeader}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  AI Suggestions
+                </h2>
+
+                <p style={styles.sectionSubtitle}>
+                  What you should focus on next
+                </p>
+              </div>
+
+              <Icon
+                name="spark"
+                size={18}
+                stroke={C.purple}
+              />
+            </div>
+
+            <div style={styles.suggestionGrid}>
+              {suggestions.map((item) => (
+                <button
+                  type="button"
+                  key={item.title}
+                  style={styles.suggestionCard}
+                >
+                  <div style={styles.suggestionIcon}>
+                    <Icon
+                      name={item.icon}
+                      size={18}
+                      stroke={C.green}
+                    />
+                  </div>
+
+                  <div style={styles.suggestionTitle}>
                     {item.title}
                   </div>
 
-                  <div style={styles.resourceText}>
+                  <div style={styles.suggestionText}>
                     {item.text}
                   </div>
-                </div>
 
-                <Icon
-                  name="arrow"
-                  size={17}
-                  stroke={C.green}
-                />
-              </div>
-            ))}
-          </section>
-        )}
+                  <div style={styles.suggestionLink}>
+                    View suggestion
 
-        <section style={styles.suggestionSection}>
-          <div style={styles.sectionHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>
-                AI Suggestions
-              </h2>
-
-              <p style={styles.sectionSubtitle}>
-                What you should focus on next
-              </p>
-            </div>
-
-            <Icon
-              name="spark"
-              size={19}
-              stroke={C.purple}
-            />
-          </div>
-
-          <div style={styles.suggestionGrid}>
-            {suggestions.map((item) => (
-              <button
-                key={item.title}
-                style={styles.suggestionCard}
-                onClick={() => {}}
-              >
-                <div style={styles.suggestionIcon}>
-                  <Icon
-                    name={item.icon}
-                    size={19}
-                    stroke={C.green}
-                  />
-                </div>
-
-                <div style={styles.suggestionTitle}>
-                  {item.title}
-                </div>
-
-                <div style={styles.suggestionText}>
-                  {item.text}
-                </div>
-
-                <div style={styles.suggestionLink}>
-                  View suggestion
-                  <Icon
-                    name="arrow"
-                    size={14}
-                    stroke={C.green}
-                  />
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section style={styles.chatCard}>
-          <div style={styles.chatHeader}>
-            <div style={styles.chatAvatar}>
-              <Icon
-                name="spark"
-                size={19}
-                stroke="#FFFFFF"
-              />
-            </div>
-
-            <div>
-              <div style={styles.chatTitle}>
-                Ask your AI Counsellor
-              </div>
-
-              <div style={styles.chatSubtitle}>
-                Get guidance about your preparation
-              </div>
-            </div>
-          </div>
-
-          {messages.length > 0 && (
-            <div style={styles.messages}>
-              {messages.map((item, index) => (
-                <div
-                  key={`${item.from}-${index}`}
-                  style={{
-                    ...styles.message,
-                    ...(item.from === "user"
-                      ? styles.userMessage
-                      : styles.aiMessage),
-                  }}
-                >
-                  {item.text}
-                </div>
+                    <Icon
+                      name="arrow"
+                      size={13}
+                      stroke={C.green}
+                    />
+                  </div>
+                </button>
               ))}
             </div>
-          )}
+          </section>
 
-          <div style={styles.chatInputRow}>
-            <input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") sendMessage();
-              }}
-              placeholder="Ask anything about your preparation..."
-              style={styles.input}
-            />
+          {/* AI CHAT */}
+          <section style={styles.chatCard}>
+            <div style={styles.chatHeader}>
+              <div style={styles.chatAvatar}>
+                <Icon
+                  name="spark"
+                  size={18}
+                  stroke="#FFFFFF"
+                />
+              </div>
 
-            <button
-              style={styles.sendButton}
-              onClick={sendMessage}
-              aria-label="Send"
-            >
-              <Icon
-                name="send"
-                size={18}
-                stroke="#FFFFFF"
+              <div>
+                <div style={styles.chatTitle}>
+                  Ask your AI Counsellor
+                </div>
+
+                <div style={styles.chatSubtitle}>
+                  Get guidance about your preparation
+                </div>
+              </div>
+            </div>
+
+            {messages.length > 0 && (
+              <div style={styles.messages}>
+                {messages.map((item, index) => (
+                  <div
+                    key={`${item.from}-${index}`}
+                    style={{
+                      ...styles.message,
+                      ...(item.from === "user"
+                        ? styles.userMessage
+                        : styles.aiMessage),
+                    }}
+                  >
+                    {item.text}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={styles.chatInputRow}>
+              <input
+                value={message}
+                onChange={(e) =>
+                  setMessage(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    sendMessage();
+                  }
+                }}
+                placeholder="Ask anything about your preparation..."
+                style={styles.input}
               />
-            </button>
-          </div>
-        </section>
-      </main>
+
+              <button
+                type="button"
+                style={styles.sendButton}
+                onClick={sendMessage}
+                aria-label="Send"
+              >
+                <Icon
+                  name="send"
+                  size={17}
+                  stroke="#FFFFFF"
+                />
+              </button>
+            </div>
+          </section>
+
+          <div style={styles.bottomSpace} />
+        </main>
+
+        {/* SAME BOTTOM NAV AS DASHBOARD */}
+        <nav style={styles.bottomNav}>
+          <button
+            type="button"
+            style={{
+              ...styles.navButton,
+              ...styles.navActive,
+            }}
+            onClick={() =>
+              open("dashboard")
+            }
+          >
+            <span style={styles.navIcon}>
+              <Icon name="home" size={20} />
+            </span>
+
+            <span>Home</span>
+          </button>
+
+          <button
+            type="button"
+            style={styles.navButton}
+            onClick={() =>
+              open("mock-tests")
+            }
+          >
+            <span style={styles.navIcon}>
+              <Icon name="tests" size={19} />
+            </span>
+
+            <span>Tests</span>
+          </button>
+
+          <button
+            type="button"
+            style={styles.navButton}
+            onClick={() =>
+              open("analysis")
+            }
+          >
+            <span style={styles.navIcon}>
+              <Icon name="analysis" size={20} />
+            </span>
+
+            <span>Analysis</span>
+          </button>
+
+          <button
+            type="button"
+            style={styles.navButton}
+            onClick={() =>
+              open("college-prediction")
+            }
+          >
+            <span style={styles.navIcon}>
+              <Icon name="college" size={19} />
+            </span>
+
+            <span>Colleges</span>
+          </button>
+
+          <button
+            type="button"
+            style={styles.navButton}
+            onClick={() =>
+              open("profile")
+            }
+          >
+            <span style={styles.navIcon}>
+              <Icon name="profile" size={20} />
+            </span>
+
+            <span>Profile</span>
+          </button>
+        </nav>
+      </div>
     </div>
   );
 }
 
-function PlanRow({ time, title, text, icon, last }) {
+function PlanRow({
+  time,
+  title,
+  text,
+  icon,
+  last,
+}) {
   return (
     <div
       style={{
@@ -611,253 +813,316 @@ function PlanRow({ time, title, text, icon, last }) {
       <div style={styles.planIcon}>
         <Icon
           name={icon}
-          size={18}
+          size={17}
           stroke={C.green}
         />
       </div>
 
-      <div style={{ flex: 1 }}>
-        <div style={styles.planTitle}>{title}</div>
+      <div style={styles.planMiddle}>
+        <div style={styles.planTitle}>
+          {title}
+        </div>
 
-        <div style={styles.planText}>{text}</div>
+        <div style={styles.planText}>
+          {text}
+        </div>
       </div>
 
-      <div style={styles.planTimeSmall}>{time}</div>
+      <div style={styles.planTimeSmall}>
+        {time}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  page: {
+  /* SAME DASHBOARD OUTER SHELL */
+  screen: {
+    width: "100%",
     minHeight: "100vh",
-    background: C.mint,
-    color: C.navy,
+    minHeight: "100dvh",
+    background: "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "stretch",
+    padding: 0,
+    boxSizing: "border-box",
     fontFamily:
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    color: "#FFFFFF",
   },
 
+  /* SAME 390px PHONE */
+  phone: {
+    width: "100%",
+    maxWidth: "430px",
+    height: "100vh",
+    height: "100dvh",
+    minHeight: 0,
+    background: "transparent",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    boxSizing: "border-box",
+  },
+
+  /* SAME DASHBOARD HEADER HEIGHT */
   header: {
-    background: C.white,
-    borderBottom: `1px solid ${C.border}`,
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
-  },
-
-  headerInner: {
-    maxWidth: 920,
-    margin: "0 auto",
-    padding: "15px 20px",
+    height: "64px",
+    minHeight: "64px",
+    padding: "0 16px",
     display: "flex",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
+    background: "rgba(6, 49, 43, 0.85)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+    flexShrink: 0,
   },
 
   backButton: {
     width: 40,
     height: 40,
+    border: "1px solid rgba(255, 255, 255, 0.12)",
     borderRadius: 12,
-    border: `1px solid ${C.border}`,
-    background: C.white,
+    background: "rgba(255, 255, 255, 0.08)",
+    color: "#10E79D",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
+    flexShrink: 0,
   },
 
   brand: {
-    fontSize: 17,
-    fontWeight: 900,
-    letterSpacing: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
     lineHeight: 1,
   },
 
-  tagline: {
-    marginTop: 5,
-    fontSize: 9,
-    color: C.muted,
-    fontWeight: 800,
-    letterSpacing: 0.7,
+  brandTop: {
+    fontSize: "16px",
+    fontWeight: 900,
+    color: "#FFFFFF",
+    letterSpacing: "-0.4px",
+  },
+
+  brandBottom: {
+    marginTop: "4px",
+    fontSize: "7.5px",
+    fontWeight: 900,
+    letterSpacing: "1.7px",
+    color: "#10E79D",
   },
 
   aiHeaderIcon: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius: 12,
-    background: "#F1EBFF",
+    background: "rgba(168, 85, 247, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
 
-  container: {
-    width: "100%",
-    maxWidth: 920,
-    margin: "0 auto",
-    padding: "28px 20px 44px",
+  /* SAME SCROLL AREA */
+  content: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: "auto",
+    overflowX: "hidden",
+    padding: "18px 15px 12px",
     boxSizing: "border-box",
+    WebkitOverflowScrolling: "touch",
   },
 
   hero: {
     display: "flex",
     alignItems: "center",
-    gap: 15,
+    gap: 12,
+    marginBottom: 16,
   },
 
   robot: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    background: C.green,
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    background: "#007050",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    boxShadow: "0 10px 22px rgba(0,112,80,0.17)",
+    boxShadow:
+      "0 8px 18px rgba(0,112,80,0.16)",
+  },
+
+  heroText: {
+    minWidth: 0,
+    flex: 1,
   },
 
   kicker: {
     color: C.purple,
-    fontSize: 10,
+    fontSize: "7.5px",
     fontWeight: 900,
-    letterSpacing: 1,
-    marginBottom: 5,
+    letterSpacing: "1px",
+    marginBottom: 4,
   },
 
   title: {
     margin: 0,
-    fontSize: 27,
+    fontSize: "21px",
     lineHeight: 1.2,
     fontWeight: 900,
-    letterSpacing: -0.6,
+    color: C.navy,
+    letterSpacing: "-0.5px",
   },
 
   subtitle: {
-    margin: "7px 0 0",
+    margin: "5px 0 0",
     color: C.muted,
-    fontSize: 12.5,
-    lineHeight: 1.5,
-    maxWidth: 650,
+    fontSize: "9.5px",
+    lineHeight: 1.45,
   },
 
   tabs: {
     display: "flex",
     gap: 4,
     padding: 4,
-    marginTop: 22,
     borderRadius: 13,
     background: C.softMint,
+    marginBottom: 12,
   },
 
   tab: {
     flex: 1,
-    border: "none",
+    minWidth: 0,
+    border: 0,
     background: "transparent",
     borderRadius: 9,
-    padding: "10px 8px",
+    padding: "9px 4px",
     color: C.muted,
-    fontSize: 11,
-    fontWeight: 800,
+    fontSize: "9px",
+    fontWeight: 850,
     cursor: "pointer",
   },
 
   activeTab: {
     background: C.white,
     color: C.green,
-    boxShadow: "0 2px 8px rgba(8,47,60,0.06)",
+    boxShadow:
+      "0 2px 8px rgba(8,47,60,0.06)",
   },
 
   section: {
-    marginTop: 13,
-    padding: 17,
-    borderRadius: 19,
+    borderRadius: 17,
     background: C.white,
     border: `1px solid ${C.border}`,
+    padding: 14,
+    boxSizing: "border-box",
   },
 
   sectionHeader: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 12,
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 10,
   },
 
   sectionTitle: {
     margin: 0,
-    fontSize: 15,
+    fontSize: "14px",
+    lineHeight: 1.2,
     fontWeight: 900,
+    color: C.navy,
   },
 
   sectionSubtitle: {
     margin: "4px 0 0",
-    fontSize: 10.5,
+    fontSize: "8.5px",
+    lineHeight: 1.4,
     color: C.muted,
   },
 
   detectedBadge: {
-    padding: "6px 8px",
+    padding: "5px 7px",
     borderRadius: 8,
-    background: "#F1EBFF",
+    background: "#F2EAFE",
     color: C.purple,
-    fontSize: 8.5,
+    fontSize: "7px",
     fontWeight: 900,
     textTransform: "uppercase",
+    whiteSpace: "nowrap",
   },
 
   weakCard: {
     display: "flex",
-    gap: 12,
-    padding: "16px 0",
+    gap: 10,
+    padding: "14px 0",
     borderTop: `1px solid ${C.border}`,
   },
 
   areaIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 39,
+    height: 39,
+    borderRadius: 11,
     background: "#F8FAF9",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 20,
+    fontSize: 18,
     flexShrink: 0,
+  },
+
+  areaContent: {
+    flex: 1,
+    minWidth: 0,
   },
 
   areaTop: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "space-between",
+    gap: 7,
   },
 
   areaTitle: {
-    fontSize: 13,
+    minWidth: 0,
+    fontSize: "11px",
+    lineHeight: 1.2,
     fontWeight: 900,
+    color: C.navy,
   },
 
   priority: {
-    fontSize: 8,
-    fontWeight: 900,
-    padding: "5px 7px",
+    padding: "4px 6px",
     borderRadius: 7,
+    fontSize: "6.5px",
+    fontWeight: 900,
     whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 
   accuracyRow: {
     display: "flex",
     justifyContent: "space-between",
-    marginTop: 7,
+    alignItems: "center",
+    marginTop: 6,
     color: C.muted,
-    fontSize: 9.5,
+    fontSize: "8px",
     fontWeight: 700,
   },
 
   barTrack: {
-    height: 6,
+    width: "100%",
+    height: 5,
+    marginTop: 5,
     background: C.softMint,
     borderRadius: 20,
-    marginTop: 6,
     overflow: "hidden",
   },
 
@@ -867,42 +1132,44 @@ const styles = {
   },
 
   actionList: {
-    marginTop: 10,
+    marginTop: 8,
   },
 
   action: {
     display: "flex",
     alignItems: "center",
-    gap: 7,
-    marginTop: 6,
-    fontSize: 10.5,
+    gap: 6,
+    marginTop: 5,
+    fontSize: "8.5px",
+    lineHeight: 1.25,
     color: C.muted,
   },
 
   actionNumber: {
-    width: 17,
-    height: 17,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 5,
     background: C.mint,
     color: C.green,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 8,
+    fontSize: "7px",
     fontWeight: 900,
+    flexShrink: 0,
   },
 
   startNow: {
-    marginTop: 11,
-    border: "none",
+    marginTop: 9,
+    border: 0,
     borderRadius: 9,
-    padding: "8px 10px",
+    padding: "7px 9px",
     background: C.mint,
     color: C.green,
     display: "inline-flex",
     alignItems: "center",
-    gap: 7,
-    fontSize: 10,
+    gap: 6,
+    fontSize: "8px",
     fontWeight: 900,
     cursor: "pointer",
   },
@@ -910,14 +1177,14 @@ const styles = {
   planRow: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
-    padding: "14px 0",
+    gap: 9,
+    padding: "12px 0",
   },
 
   planIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 35,
+    height: 35,
+    borderRadius: 10,
     background: C.mint,
     display: "flex",
     alignItems: "center",
@@ -925,63 +1192,71 @@ const styles = {
     flexShrink: 0,
   },
 
+  planMiddle: {
+    flex: 1,
+    minWidth: 0,
+  },
+
   planTitle: {
-    fontSize: 12.5,
-    fontWeight: 850,
+    fontSize: "10.5px",
+    lineHeight: 1.2,
+    fontWeight: 900,
+    color: C.navy,
   },
 
   planText: {
-    marginTop: 4,
+    marginTop: 3,
     color: C.muted,
-    fontSize: 10.5,
+    fontSize: "8.5px",
+    lineHeight: 1.35,
   },
 
   planTimeSmall: {
     color: C.green,
-    fontSize: 10,
+    fontSize: "8px",
     fontWeight: 900,
     whiteSpace: "nowrap",
   },
 
   planSummary: {
-    marginTop: 14,
-    padding: 15,
-    borderRadius: 14,
+    marginTop: 11,
+    padding: 12,
+    borderRadius: 12,
     background: C.mint,
   },
 
   planSummaryTitle: {
     color: C.muted,
-    fontSize: 9,
+    fontSize: "7.5px",
     fontWeight: 800,
   },
 
   planTime: {
-    marginTop: 3,
+    marginTop: 2,
     color: C.green,
-    fontSize: 24,
+    fontSize: "21px",
     fontWeight: 900,
   },
 
   planHint: {
-    marginTop: 4,
+    marginTop: 3,
     color: C.muted,
-    fontSize: 10.5,
-    lineHeight: 1.45,
+    fontSize: "8.5px",
+    lineHeight: 1.4,
   },
 
   resourceCard: {
     display: "flex",
     alignItems: "center",
-    gap: 11,
-    padding: "13px 0",
+    gap: 9,
+    padding: "11px 0",
     borderTop: `1px solid ${C.border}`,
   },
 
   resourceIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 35,
+    height: 35,
+    borderRadius: 10,
     background: C.mint,
     display: "flex",
     alignItems: "center",
@@ -989,42 +1264,49 @@ const styles = {
     flexShrink: 0,
   },
 
+  resourceTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+
   resourceTitle: {
-    fontSize: 12.5,
-    fontWeight: 850,
+    fontSize: "10.5px",
+    fontWeight: 900,
+    color: C.navy,
   },
 
   resourceText: {
     marginTop: 3,
+    fontSize: "8.5px",
+    lineHeight: 1.35,
     color: C.muted,
-    fontSize: 10.5,
   },
 
   suggestionSection: {
-    marginTop: 22,
+    marginTop: 18,
   },
 
   suggestionGrid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(190px, 1fr))",
-    gap: 10,
+      "repeat(2, minmax(0, 1fr))",
+    gap: 8,
   },
 
   suggestionCard: {
+    minWidth: 0,
     border: `1px solid ${C.border}`,
     background: C.white,
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 13,
+    padding: 11,
     textAlign: "left",
     cursor: "pointer",
-    boxShadow: "0 4px 14px rgba(8,47,60,0.035)",
   },
 
   suggestionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     background: C.mint,
     display: "flex",
     alignItems: "center",
@@ -1032,77 +1314,82 @@ const styles = {
   },
 
   suggestionTitle: {
-    marginTop: 11,
-    fontSize: 12,
+    marginTop: 8,
+    fontSize: "9.5px",
+    lineHeight: 1.25,
     fontWeight: 900,
+    color: C.navy,
   },
 
   suggestionText: {
-    marginTop: 5,
+    marginTop: 4,
     color: C.muted,
-    fontSize: 10.5,
-    lineHeight: 1.5,
+    fontSize: "8px",
+    lineHeight: 1.4,
   },
 
   suggestionLink: {
-    marginTop: 12,
+    marginTop: 8,
     color: C.green,
-    fontSize: 9.5,
+    fontSize: "7.5px",
     fontWeight: 900,
     display: "flex",
     alignItems: "center",
-    gap: 5,
+    gap: 4,
   },
 
   chatCard: {
-    marginTop: 20,
-    borderRadius: 20,
+    marginTop: 16,
+    borderRadius: 16,
     background: C.white,
     border: `1px solid ${C.border}`,
-    padding: 17,
-    boxShadow: "0 7px 20px rgba(8,47,60,0.045)",
+    padding: 13,
+    boxShadow:
+      "0 5px 16px rgba(8,47,60,0.04)",
   },
 
   chatHeader: {
     display: "flex",
     alignItems: "center",
-    gap: 11,
+    gap: 9,
   },
 
   chatAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 37,
+    height: 37,
+    borderRadius: 11,
     background: C.green,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
 
   chatTitle: {
-    fontSize: 13,
+    fontSize: "10.5px",
     fontWeight: 900,
+    color: C.navy,
   },
 
   chatSubtitle: {
     marginTop: 3,
     color: C.muted,
-    fontSize: 10,
+    fontSize: "8px",
   },
 
   messages: {
-    marginTop: 15,
+    marginTop: 12,
     display: "flex",
     flexDirection: "column",
-    gap: 8,
+    gap: 7,
   },
 
   message: {
     maxWidth: "88%",
-    padding: "9px 11px",
-    borderRadius: 11,
-    fontSize: 10.5,
-    lineHeight: 1.5,
+    padding: "8px 9px",
+    borderRadius: 10,
+    fontSize: "8.5px",
+    lineHeight: 1.4,
   },
 
   userMessage: {
@@ -1113,38 +1400,92 @@ const styles = {
 
   aiMessage: {
     alignSelf: "flex-start",
-    background: C.mint,
-    color: C.navy,
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    color: "#FFFFFF",
   },
 
   chatInputRow: {
-    marginTop: 15,
+    marginTop: 12,
     display: "flex",
-    gap: 8,
+    gap: 7,
   },
 
   input: {
     flex: 1,
     minWidth: 0,
     border: `1px solid ${C.border}`,
-    background: "#FBFCFC",
-    borderRadius: 12,
-    padding: "12px 13px",
+    background: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 10,
+    padding: "10px 10px",
     outline: "none",
-    color: C.navy,
-    fontSize: 11,
+    color: "#FFFFFF",
+    fontSize: "9px",
+    boxSizing: "border-box",
   },
 
   sendButton: {
-    width: 43,
-    height: 43,
-    borderRadius: 12,
-    border: "none",
-    background: C.green,
+    width: 39,
+    height: 39,
+    borderRadius: 10,
+    border: 0,
+    background: "linear-gradient(135deg, #10E79D, #007050)",
+    color: "#010F0E",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
     flexShrink: 0,
+  },
+
+  bottomSpace: {
+    height: 10,
+    flexShrink: 0,
+  },
+
+  /* SAME DASHBOARD BOTTOM NAV */
+  bottomNav: {
+    height: "68px",
+    minHeight: "68px",
+    borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+    background: "rgba(4, 25, 23, 0.94)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(5, minmax(0, 1fr))",
+    padding: "4px 3px 5px",
+    boxSizing: "border-box",
+    flexShrink: 0,
+    zIndex: 10,
+  },
+
+  navButton: {
+    minWidth: 0,
+    border: 0,
+    background: "transparent",
+    color: "rgba(226, 232, 240, 0.6)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    cursor: "pointer",
+    fontSize: "8px",
+    fontWeight: 750,
+    padding: "3px 0",
+  },
+
+  navActive: {
+    color: "#10E79D",
+    fontWeight: 900,
+  },
+
+  navIcon: {
+    width: 25,
+    height: 25,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 };

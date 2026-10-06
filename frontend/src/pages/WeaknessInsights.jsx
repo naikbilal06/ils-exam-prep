@@ -142,30 +142,45 @@ export default function WeaknessInsights({
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#F4FBF7",
+        width: "100%",
+        minHeight: "100dvh",
+        background:
+          "radial-gradient(130% 110% at 50% 0%, #06312B 0%, #031D1B 45%, #010F0E 100%)",
+        color: "#FFFFFF",
+        display: "flex",
+        justifyContent: "center",
       }}
     >
-      <PageHeader
-        title="Weakness Insights"
-        onOpenMenu={onOpenSection}
-      />
-
-      <main
+      <div
         style={{
-          maxWidth: "560px",
-          margin: "0 auto",
-          padding: "13px 16px 30px",
+          width: "100%",
+          maxWidth: "430px",
+          minHeight: "100dvh",
+          boxSizing: "border-box",
         }}
       >
+        <PageHeader
+          title="Weakness Insights"
+          onBack={onBack}
+          onOpenMenu={onOpenSection}
+        />
+
+        <main
+          style={{
+            width: "100%",
+            maxWidth: "430px",
+            margin: "0 auto",
+            padding: "14px 16px 115px",
+            boxSizing: "border-box",
+          }}
+        >
         {/* HEADER CARD */}
         <section
           style={{
             padding: "18px",
             borderRadius: "22px",
-            background:
-              "linear-gradient(135deg, #E8F8F0, #FFFFFF)",
-            border: "1px solid #D5EADF",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <div
@@ -180,7 +195,7 @@ export default function WeaknessInsights({
                 width: "45px",
                 height: "45px",
                 borderRadius: "14px",
-                background: "#FFF2E0",
+                background: "rgba(245, 158, 11, 0.15)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -190,15 +205,15 @@ export default function WeaknessInsights({
               <Icon
                 name="warning"
                 size={23}
-                color="#C78927"
+                color="#FBBF24"
               />
             </div>
 
             <div>
               <span
                 style={{
-                  color: "#159B72",
-                  fontSize: "8px",
+                  color: "#10E79D",
+                  fontSize: "11px",
                   fontWeight: 800,
                   letterSpacing: "1px",
                 }}
@@ -209,8 +224,9 @@ export default function WeaknessInsights({
               <h1
                 style={{
                   margin: "4px 0 3px",
-                  color: "#183238",
-                  fontSize: "22px",
+                  color: "#FFFFFF",
+                  fontSize: "20px",
+                  fontWeight: 900,
                 }}
               >
                 Weakness Insights
@@ -219,8 +235,8 @@ export default function WeaknessInsights({
               <p
                 style={{
                   margin: 0,
-                  color: "#748381",
-                  fontSize: "9px",
+                  color: "rgba(226, 232, 240, 0.75)",
+                  fontSize: "13px",
                   lineHeight: 1.5,
                 }}
               >
@@ -235,11 +251,11 @@ export default function WeaknessInsights({
         {/* OVERALL STATUS */}
         <section
           style={{
-            marginTop: "11px",
-            padding: "15px",
-            borderRadius: "19px",
-            background: "#FFFFFF",
-            border: "1px solid #DDE9E3",
+            marginTop: "12px",
+            padding: "16px",
+            borderRadius: "18px",
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
           <div
@@ -252,8 +268,8 @@ export default function WeaknessInsights({
             <div>
               <span
                 style={{
-                  color: "#84918F",
-                  fontSize: "7px",
+                  color: "rgba(226, 232, 240, 0.65)",
+                  fontSize: "11px",
                   fontWeight: 700,
                   letterSpacing: ".8px",
                 }}
@@ -265,14 +281,15 @@ export default function WeaknessInsights({
                 style={{
                   display: "flex",
                   alignItems: "baseline",
-                  gap: "5px",
+                  gap: "6px",
                   marginTop: "3px",
                 }}
               >
                 <strong
                   style={{
-                    color: "#183238",
-                    fontSize: "27px",
+                    color: "#FFFFFF",
+                    fontSize: "26px",
+                    fontWeight: 900,
                   }}
                 >
                   {overallAccuracy}%
@@ -280,8 +297,8 @@ export default function WeaknessInsights({
 
                 <span
                   style={{
-                    color: "#D85B65",
-                    fontSize: "8px",
+                    color: "#FB7185",
+                    fontSize: "12px",
                     fontWeight: 700,
                   }}
                 >
@@ -296,9 +313,9 @@ export default function WeaknessInsights({
                 height: "54px",
                 borderRadius: "50%",
                 background:
-                  `conic-gradient(#159B72 ${
+                  `conic-gradient(#10E79D ${
                     overallAccuracy * 3.6
-                  }deg, #E3ECE7 ${
+                  }deg, rgba(255, 255, 255, 0.1) ${
                     overallAccuracy * 3.6
                   }deg 360deg)`,
                 display: "flex",
@@ -311,13 +328,13 @@ export default function WeaknessInsights({
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: "#FFFFFF",
+                  background: "#031D1B",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#159B72",
-                  fontWeight: 800,
-                  fontSize: "9px",
+                  color: "#10E79D",
+                  fontWeight: 900,
+                  fontSize: "13px",
                 }}
               >
                 {overallAccuracy}%
@@ -328,9 +345,9 @@ export default function WeaknessInsights({
           <div
             style={{
               marginTop: "12px",
-              height: "7px",
+              height: "8px",
               borderRadius: "20px",
-              background: "#E7EEE9",
+              background: "rgba(255, 255, 255, 0.08)",
               overflow: "hidden",
             }}
           >
@@ -339,16 +356,16 @@ export default function WeaknessInsights({
                 width: `${overallAccuracy}%`,
                 height: "100%",
                 borderRadius: "20px",
-                background: "#159B72",
+                background: "#10E79D",
               }}
             />
           </div>
 
           <p
             style={{
-              margin: "8px 0 0",
-              color: "#798684",
-              fontSize: "8px",
+              margin: "10px 0 0",
+              color: "rgba(226, 232, 240, 0.75)",
+              fontSize: "12.5px",
               lineHeight: 1.5,
             }}
           >
@@ -358,12 +375,12 @@ export default function WeaknessInsights({
         </section>
 
         {/* WEAK AREAS */}
-        <section style={{ marginTop: "14px" }}>
-          <div style={{ marginBottom: "8px" }}>
+        <section style={{ marginTop: "16px" }}>
+          <div style={{ marginBottom: "10px" }}>
             <span
               style={{
-                color: "#159B72",
-                fontSize: "7px",
+                color: "#10E79D",
+                fontSize: "11px",
                 fontWeight: 800,
                 letterSpacing: "1px",
               }}
@@ -374,8 +391,9 @@ export default function WeaknessInsights({
             <h2
               style={{
                 margin: "4px 0 0",
-                color: "#183238",
+                color: "#FFFFFF",
                 fontSize: "17px",
+                fontWeight: 800,
               }}
             >
               Chapters to Improve
@@ -385,39 +403,40 @@ export default function WeaknessInsights({
           <div
             style={{
               display: "grid",
-              gap: "9px",
+              gap: "10px",
             }}
           >
             {weakAreas.map((area, index) => (
               <div
                 key={area.chapter}
                 style={{
-                  padding: "14px",
-                  borderRadius: "18px",
-                  background: "#FFFFFF",
-                  border: "1px solid #DDE9E3",
+                  padding: "15px",
+                  borderRadius: "16px",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     alignItems: "flex-start",
-                    gap: "10px",
+                    gap: "12px",
                   }}
                 >
                   <div
                     style={{
-                      width: "32px",
-                      height: "32px",
+                      width: "34px",
+                      height: "34px",
                       borderRadius: "10px",
-                      background: "#FFF1F2",
-                      color: "#D85B65",
+                      background: "rgba(239, 68, 68, 0.15)",
+                      color: "#EF4444",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontWeight: 800,
-                      fontSize: "10px",
-                      flex: "0 0 32px",
+                      fontSize: "13px",
+                      flex: "0 0 34px",
+                      border: "1px solid rgba(239, 68, 68, 0.25)",
                     }}
                   >
                     {index + 1}
@@ -432,15 +451,16 @@ export default function WeaknessInsights({
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        gap: "7px",
+                        gap: "8px",
                       }}
                     >
                       <div>
                         <strong
                           style={{
                             display: "block",
-                            color: "#28393D",
-                            fontSize: "10px",
+                            color: "#FFFFFF",
+                            fontSize: "14px",
+                            fontWeight: 800,
                           }}
                         >
                           {area.chapter}
@@ -448,8 +468,9 @@ export default function WeaknessInsights({
 
                         <span
                           style={{
-                            color: "#84908E",
-                            fontSize: "7px",
+                            color: "rgba(226, 232, 240, 0.65)",
+                            fontSize: "12px",
+                            fontWeight: 600,
                           }}
                         >
                           {area.subject}
@@ -458,12 +479,13 @@ export default function WeaknessInsights({
 
                       <span
                         style={{
-                          padding: "5px 7px",
+                          padding: "4px 8px",
                           borderRadius: "8px",
-                          background: "#FFF1F2",
-                          color: "#D85B65",
-                          fontSize: "6px",
+                          background: "rgba(239, 68, 68, 0.15)",
+                          color: "#EF4444",
+                          fontSize: "11px",
                           fontWeight: 800,
+                          border: "1px solid rgba(239, 68, 68, 0.25)",
                         }}
                       >
                         {area.level}
@@ -472,15 +494,16 @@ export default function WeaknessInsights({
 
                     <div
                       style={{
-                        marginTop: "9px",
+                        marginTop: "10px",
                         display: "flex",
                         justifyContent: "space-between",
                       }}
                     >
                       <span
                         style={{
-                          color: "#74817F",
-                          fontSize: "7px",
+                          color: "rgba(226, 232, 240, 0.65)",
+                          fontSize: "12px",
+                          fontWeight: 600,
                         }}
                       >
                         Accuracy
@@ -488,8 +511,9 @@ export default function WeaknessInsights({
 
                       <strong
                         style={{
-                          color: "#D85B65",
-                          fontSize: "8px",
+                          color: "#EF4444",
+                          fontSize: "13px",
+                          fontWeight: 800,
                         }}
                       >
                         {area.accuracy}%
@@ -498,10 +522,10 @@ export default function WeaknessInsights({
 
                     <div
                       style={{
-                        marginTop: "4px",
-                        height: "6px",
+                        marginTop: "5px",
+                        height: "7px",
                         borderRadius: "20px",
-                        background: "#EDF1EF",
+                        background: "rgba(255, 255, 255, 0.1)",
                         overflow: "hidden",
                       }}
                     >
@@ -510,7 +534,7 @@ export default function WeaknessInsights({
                           width: `${area.accuracy}%`,
                           height: "100%",
                           borderRadius: "20px",
-                          background: "#D85B65",
+                          background: "#EF4444",
                         }}
                       />
                     </div>
@@ -518,14 +542,14 @@ export default function WeaknessInsights({
                     <div
                       style={{
                         display: "flex",
-                        gap: "10px",
-                        marginTop: "7px",
+                        gap: "12px",
+                        marginTop: "8px",
                       }}
                     >
                       <span
                         style={{
-                          color: "#7D8A88",
-                          fontSize: "7px",
+                          color: "rgba(226, 232, 240, 0.65)",
+                          fontSize: "11.5px",
                         }}
                       >
                         Attempted: {area.attempted}
@@ -533,8 +557,9 @@ export default function WeaknessInsights({
 
                       <span
                         style={{
-                          color: "#D85B65",
-                          fontSize: "7px",
+                          color: "#EF4444",
+                          fontSize: "11.5px",
+                          fontWeight: 700,
                         }}
                       >
                         Wrong: {area.wrong}
@@ -543,20 +568,21 @@ export default function WeaknessInsights({
 
                     <div
                       style={{
-                        marginTop: "9px",
-                        padding: "8px",
+                        marginTop: "10px",
+                        padding: "10px",
                         borderRadius: "10px",
-                        background: "#FFF8F8",
+                        background: "rgba(239, 68, 68, 0.08)",
+                        border: "1px solid rgba(239, 68, 68, 0.18)",
                       }}
                     >
                       <span
                         style={{
-                          color: "#687674",
-                          fontSize: "7px",
-                          lineHeight: 1.45,
+                          color: "rgba(226, 232, 240, 0.85)",
+                          fontSize: "12px",
+                          lineHeight: 1.5,
                         }}
                       >
-                        <strong>Focus:</strong>{" "}
+                        <strong style={{ color: "#EF4444" }}>Focus:</strong>{" "}
                         {area.recommendation}
                       </span>
                     </div>
@@ -567,24 +593,24 @@ export default function WeaknessInsights({
                         onOpenSection("practice")
                       }
                       style={{
-                        marginTop: "9px",
+                        marginTop: "10px",
                         border: "none",
                         background: "transparent",
-                        color: "#159B72",
+                        color: "#10E79D",
                         padding: 0,
-                        fontSize: "7px",
+                        fontSize: "13px",
                         fontWeight: 800,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        gap: "3px",
+                        gap: "5px",
                       }}
                     >
                       Practice this chapter
                       <Icon
                         name="arrow"
-                        size={11}
-                        color="#159B72"
+                        size={14}
+                        color="#10E79D"
                       />
                     </button>
                   </div>
@@ -597,14 +623,14 @@ export default function WeaknessInsights({
         {/* STRENGTHS */}
         <section
           style={{
-            marginTop: "14px",
+            marginTop: "16px",
           }}
         >
-          <div style={{ marginBottom: "8px" }}>
+          <div style={{ marginBottom: "10px" }}>
             <span
               style={{
-                color: "#159B72",
-                fontSize: "7px",
+                color: "#10E79D",
+                fontSize: "11px",
                 fontWeight: 800,
                 letterSpacing: "1px",
               }}
@@ -615,8 +641,9 @@ export default function WeaknessInsights({
             <h2
               style={{
                 margin: "4px 0 0",
-                color: "#183238",
+                color: "#FFFFFF",
                 fontSize: "17px",
+                fontWeight: 800,
               }}
             >
               Your Strong Areas
@@ -626,7 +653,7 @@ export default function WeaknessInsights({
           <div
             style={{
               display: "grid",
-              gap: "7px",
+              gap: "8px",
             }}
           >
             {strengths.map((item) => (
@@ -635,30 +662,30 @@ export default function WeaknessInsights({
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "9px",
-                  padding: "11px",
+                  gap: "10px",
+                  padding: "12px",
                   borderRadius: "14px",
-                  background: "#EAF8F1",
-                  border: "1px solid #D5EADF",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
                 }}
               >
                 <div
                   style={{
-                    width: "29px",
-                    height: "29px",
-                    borderRadius: "9px",
-                    background: "#FFFFFF",
-                    color: "#159B72",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "10px",
+                    background: "rgba(16, 231, 157, 0.15)",
+                    color: "#10E79D",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    flex: "0 0 29px",
+                    flex: "0 0 32px",
                   }}
                 >
                   <Icon
                     name="check"
-                    size={15}
-                    color="#159B72"
+                    size={16}
+                    color="#10E79D"
                   />
                 </div>
 
@@ -666,8 +693,9 @@ export default function WeaknessInsights({
                   <strong
                     style={{
                       display: "block",
-                      color: "#30423F",
-                      fontSize: "8px",
+                      color: "#FFFFFF",
+                      fontSize: "13.5px",
+                      fontWeight: 800,
                     }}
                   >
                     {item.chapter}
@@ -675,8 +703,8 @@ export default function WeaknessInsights({
 
                   <span
                     style={{
-                      color: "#82908D",
-                      fontSize: "7px",
+                      color: "rgba(226, 232, 240, 0.65)",
+                      fontSize: "11.5px",
                     }}
                   >
                     {item.subject}
@@ -685,8 +713,9 @@ export default function WeaknessInsights({
 
                 <strong
                   style={{
-                    color: "#159B72",
-                    fontSize: "12px",
+                    color: "#10E79D",
+                    fontSize: "14px",
+                    fontWeight: 900,
                   }}
                 >
                   {item.accuracy}%
@@ -699,36 +728,38 @@ export default function WeaknessInsights({
         {/* ACTION CARD */}
         <section
           style={{
-            marginTop: "14px",
-            padding: "16px",
+            marginTop: "16px",
+            padding: "18px",
             borderRadius: "19px",
-            background: "#159B72",
+            background: "linear-gradient(135deg, #06312B, #031D1B)",
+            border: "1px solid rgba(16, 231, 157, 0.3)",
             color: "#FFFFFF",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "11px",
+              gap: "12px",
             }}
           >
             <div
               style={{
-                width: "40px",
-                height: "40px",
+                width: "42px",
+                height: "42px",
                 borderRadius: "12px",
-                background: "rgba(255,255,255,.16)",
+                background: "rgba(16, 231, 157, 0.18)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                flex: "0 0 40px",
+                flex: "0 0 42px",
               }}
             >
               <Icon
                 name="target"
-                size={21}
-                color="#FFFFFF"
+                size={22}
+                color="#10E79D"
               />
             </div>
 
@@ -736,8 +767,10 @@ export default function WeaknessInsights({
               <strong
                 style={{
                   display: "block",
-                  fontSize: "12px",
-                  marginBottom: "3px",
+                  fontSize: "15px",
+                  fontWeight: 800,
+                  marginBottom: "4px",
+                  color: "#FFFFFF",
                 }}
               >
                 Turn weaknesses into strengths
@@ -746,9 +779,9 @@ export default function WeaknessInsights({
               <span
                 style={{
                   display: "block",
-                  fontSize: "7px",
+                  fontSize: "12.5px",
                   lineHeight: 1.5,
-                  opacity: 0.9,
+                  color: "rgba(226, 232, 240, 0.75)",
                 }}
               >
                 Start targeted practice based on your
@@ -764,33 +797,63 @@ export default function WeaknessInsights({
             }
             style={{
               width: "100%",
-              marginTop: "12px",
-              padding: "10px",
+              marginTop: "14px",
+              padding: "13px",
               border: "none",
-              borderRadius: "11px",
-              background: "#FFFFFF",
-              color: "#159B72",
-              fontSize: "8px",
+              borderRadius: "13px",
+              background: "linear-gradient(135deg, #10E79D, #007050)",
+              color: "#010F0E",
+              fontSize: "14px",
+              fontWeight: 900,
+              cursor: "pointer",
+              boxShadow: "0 4px 15px rgba(16, 231, 157, 0.35)",
+            }}
+          >
+            Start Targeted Practice →
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              onOpenSection("ai-suggestions")
+            }
+            style={{
+              width: "100%",
+              marginTop: "9px",
+              padding: "12px",
+              border: "1px solid rgba(16, 231, 157, 0.35)",
+              borderRadius: "12px",
+              background: "rgba(16, 231, 157, 0.12)",
+              color: "#10E79D",
+              fontSize: "13px",
               fontWeight: 800,
               cursor: "pointer",
             }}
           >
-            Start Targeted Practice →
+            View AI Suggestions & Recommendations →
           </button>
         </section>
 
         <button
           type="button"
-          className="back-button"
           onClick={onBack}
           style={{
             width: "100%",
-            marginTop: "12px",
+            marginTop: "14px",
+            padding: "13px",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "13px",
+            background: "rgba(255, 255, 255, 0.06)",
+            color: "#10E79D",
+            fontSize: "13px",
+            fontWeight: 800,
+            cursor: "pointer",
           }}
         >
           ← Back to Analysis
         </button>
       </main>
+      </div>
     </div>
   );
 }

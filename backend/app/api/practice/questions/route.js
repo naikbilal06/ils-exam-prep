@@ -2,11 +2,66 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Question from "@/models/Question";
 
+export const runtime = "nodejs";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:5173",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-mobile",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization",
 };
+
+function jsonResponse(data, status = 200) {
+  return NextResponse.json(data, {
+    status,
+    headers: corsHeaders,
+  });
+}
+
+function normalizeDifficulty(value) {
+  if (!value) return null;
+
+  const difficulty = String(value)
+    .trim()
+    .toLowerCase();
+
+  if (difficulty === "easy") return "Easy";
+  if (difficulty === "medium") return "Medium";
+  if (difficulty === "hard") return "Hard";
+  if (difficulty === "mixed") return "Mixed";
+
+  return null;
+}
+
+function normalizeSubject(value) {
+  if (!value) return "";
+
+  return String(value)
+    .trim()
+    .toLowerCase();
+}
+
+function toSafeQuestion(question) {
+  return {
+    _id: question._id,
+    questionId: question.questionId,
+    exam: question.exam,
+    testId: question.testId,
+    subjectId: question.subjectId,
+    subjectName: question.subjectName,
+    chapterId: question.chapterId,
+    chapterName: question.chapterName,
+    questionText: question.questionText,
+    options: question.options,
+    explanation: question.explanation || "",
+    difficulty: question.difficulty || "Easy",
+    marks: Number(question.marks) || 4,
+    negativeMarks:
+      Number(question.negativeMarks) || 1,
+    language:
+      question.language || "English",
+  };
+}
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -22,112 +77,280 @@ export async function GET(request) {
     const { searchParams } =
       new URL(request.url);
 
-    const exam = (
-      searchParams.get("exam") || ""
-    )
-      .trim()
-      .toLowerCase();
+    const exam =
+      searchParams
+        .get("exam")
+        ?.trim()
+        .toLowerCase();
 
-    const subject = (
-      searchParams.get("subject") || ""
-    )
-      .trim()
-      .toLowerCase();
+    const subject =
+      normalizeSubject(
+        searchParams.get("subject")
+      );
 
-    const difficulty = (
-      searchParams.get("difficulty") || ""
-    )
-      .trim();
+    const testId =
+      searchParams
+        .get("testId")
+        ?.trim() || "";
 
-    const limitParam =
-      Number(searchParams.get("limit")) || 10;
+    const chapter =
+      searchParams
+        .get("chapter")
+        ?.trim() || "";
 
-    const limit = Math.min(
-      Math.max(limitParam, 1),
-      50
+    const difficulty =
+      normalizeDifficulty(
+        searchParams.get("difficulty")
+      );
+
+    const requestedLimit = Number(
+      searchParams.get("limit") || 20
     );
 
+    /*
+      Development mode can explicitly request
+      available questions even when the configured
+      test size is larger.
+
+      Production remains strict.
+    */
+    const allowPartial =
+      searchParams.get("allowPartial") ===
+      "true";
+
     if (!exam) {
-      return NextResponse.json(
+      return jsonResponse(
         {
           success: false,
           message: "Exam is required.",
         },
-        {
-          status: 400,
-          headers: corsHeaders,
-        }
+        400
       );
     }
 
-    const query = {
-      exam: new RegExp(
-        `^${escapeRegex(exam)}$`,
-        "i"
-      ),
+    if (
+      !Number.isInteger(
+        requestedLimit
+      ) ||
+      requestedLimit < 1
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          message:
+            "Limit must be a positive integer.",
+        },
+        400
+      );
+    }
+
+    if (
+      requestedLimit > 500
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          message:
+            "Maximum 500 questions can be requested at once.",
+        },
+        400
+      );
+    }
+
+    if (
+      searchParams.get("difficulty") &&
+      !difficulty
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          message:
+            "Difficulty must be Easy, Medium, Hard or Mixed.",
+        },
+        400
+      );
+    }
+
+    const filter = {
+      exam,
       isActive: true,
     };
 
     if (subject) {
-      query.subjectId = new RegExp(
-        `^${escapeRegex(subject)}$`,
-        "i"
+      filter.subjectId = subject;
+    }
+
+    if (testId) {
+      filter.testId = testId;
+    }
+
+    if (chapter) {
+      filter.chapterId = chapter;
+    }
+
+    if (
+      difficulty &&
+      difficulty !== "Mixed"
+    ) {
+      filter.difficulty = difficulty;
+    }
+
+    const availableCount =
+      await Question.countDocuments(
+        filter
+      );
+
+    /*
+      Strict mode:
+      Required count must exist.
+
+      Partial mode:
+      Return whatever unique questions are
+      currently available. This is useful while
+      the Admin Panel question bank is still
+      being built.
+    */
+    if (
+      availableCount <
+        requestedLimit &&
+      !allowPartial
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          code:
+            "INSUFFICIENT_QUESTIONS",
+          message:
+            `Only ${availableCount} questions are available for this selection, but ${requestedLimit} are required.`,
+          requested:
+            requestedLimit,
+          available:
+            availableCount,
+          exam,
+          subject:
+            subject || null,
+          difficulty:
+            difficulty || "Mixed",
+        },
+        409
       );
     }
 
-    if (difficulty) {
-      query.difficulty = difficulty;
+    const sampleSize =
+      Math.min(
+        requestedLimit,
+        availableCount
+      );
+
+    if (sampleSize <= 0) {
+      return jsonResponse(
+        {
+          success: false,
+          code:
+            "NO_QUESTIONS_AVAILABLE",
+          message:
+            "No active questions are available for this selection.",
+          requested:
+            requestedLimit,
+          available: 0,
+          exam,
+          subject:
+            subject || null,
+          difficulty:
+            difficulty || "Mixed",
+        },
+        404
+      );
     }
 
     const questions =
-      await Question.find(query)
-        .select(
-          "questionId exam testId subjectId subjectName chapterId chapterName questionText options explanation difficulty marks negativeMarks language"
-        )
-        .limit(limit)
-        .lean();
+      await Question.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $sample: {
+            size: sampleSize,
+          },
+        },
+      ]);
 
-    const sanitizedQuestions =
-      questions.map((question) => ({
-        id: question.questionId,
-        question: question.questionText,
-        options: Array.isArray(question.options)
-          ? question.options.map((option) => ({
-              key: option.key,
-              text: option.text,
-            }))
-          : [],
-        explanation:
-          question.explanation || "",
-        exam: question.exam,
-        testId: question.testId,
-        subjectId: question.subjectId,
-        subjectName: question.subjectName,
-        chapterId: question.chapterId,
-        chapterName: question.chapterName,
-        difficulty:
-          question.difficulty || "Medium",
-        marks:
-          Number(question.marks) || 4,
-        negativeMarks:
-          Number(question.negativeMarks) || 1,
-        language:
-          question.language || "English",
-      }));
+    const uniqueMap =
+      new Map();
 
-    return NextResponse.json(
+    for (
+      const question of questions
+    ) {
+      const id = String(
+        question.questionId ||
+          question._id
+      );
+
+      if (
+        !uniqueMap.has(id)
+      ) {
+        uniqueMap.set(
+          id,
+          question
+        );
+      }
+    }
+
+    const safeQuestions =
+      Array.from(
+        uniqueMap.values()
+      ).map(
+        toSafeQuestion
+      );
+
+    if (
+      safeQuestions.length === 0
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          code:
+            "NO_UNIQUE_QUESTIONS",
+          message:
+            "No unique questions are available for this selection.",
+        },
+        404
+      );
+    }
+
+    return jsonResponse(
       {
         success: true,
+
+        count:
+          safeQuestions.length,
+
+        requested:
+          requestedLimit,
+
+        available:
+          availableCount,
+
+        complete:
+          safeQuestions.length >=
+          requestedLimit,
+
+        partial:
+          safeQuestions.length <
+          requestedLimit,
+
         exam,
-        subject: subject || null,
-        totalQuestions:
-          sanitizedQuestions.length,
-        questions: sanitizedQuestions,
+
+        subject:
+          subject || null,
+
+        difficulty:
+          difficulty || "Mixed",
+
+        questions:
+          safeQuestions,
       },
-      {
-        status: 200,
-        headers: corsHeaders,
-      }
+      200
     );
   } catch (error) {
     console.error(
@@ -135,23 +358,18 @@ export async function GET(request) {
       error
     );
 
-    return NextResponse.json(
+    return jsonResponse(
       {
         success: false,
         message:
-          "Unable to load practice questions.",
+          "Unable to load questions.",
+        error:
+          process.env.NODE_ENV ===
+          "development"
+            ? error.message
+            : undefined,
       },
-      {
-        status: 500,
-        headers: corsHeaders,
-      }
+      500
     );
   }
-}
-
-function escapeRegex(value) {
-  return value.replace(
-    /[.*+?^${}()|[\]\\]/g,
-    "\\$&"
-  );
 }
